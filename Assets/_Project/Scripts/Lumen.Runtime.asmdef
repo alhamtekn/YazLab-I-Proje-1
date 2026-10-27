@@ -1,0 +1,19 @@
+{
+    "name": "Lumen.Runtime",
+    "rootNamespace": "Lumen",
+    "references": [
+        "Unity.AI.Navigation",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

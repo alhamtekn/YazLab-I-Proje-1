@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Project/Scenes/Lumen.unity
+    guid: b79c1d3832d5d9b4c8539680f5c67950
   m_configObjects: {}
