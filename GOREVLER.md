@@ -2,7 +2,7 @@
 
 Teslim: **6 Kasım Cuma 17:00**. Bu dosya güncel görev listesidir; bir görev değişince en alttaki **Değişiklik kaydı**na tarihli bir satır eklenir. `git pull` sonrası önce bu dosyaya bakın.
 
-- **Geliştirici 1 — Onur (OnurTOPBAS):** eşlikçi ve seviye
+- **Geliştirici 1 — Onur (OnurTOPBAS):** eşlikçi ve seviye (kurulum tamam)
 - **Geliştirici 2 — alhamtekn:** Ollama NPC, sohbet arayüzü, oyun durumu
 
 ## Çalışma kuralları
