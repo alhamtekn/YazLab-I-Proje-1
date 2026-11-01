@@ -3,9 +3,7 @@ using UnityEngine;
 namespace Lumen.NPC
 {
     /// <summary>
-    /// Geçici test (Arven sahneye gelince C kısmı silinecek):
-    /// C = Arven henüz sahnede olmadığı için sohbet panelini doğrudan açar.
-    /// Y = Ollama'ya gitmeden ayrıştırıcıyı bozuk/hatalı örneklerle dener.
+    /// Geliştirici testi: Y = Ollama'ya gitmeden ayrıştırıcıyı bozuk/hatalı örneklerle dener (sonuç Console'da).
     /// </summary>
     public sealed class OllamaTest : MonoBehaviour
     {
@@ -15,14 +13,9 @@ namespace Lumen.NPC
 
         private void Update()
         {
-            // Panel açıkken oyuncu yazı yazıyordur; C ve Y harfleri test tetiklemesin
+            // Panel açıkken oyuncu yazı yazıyordur; Y harfi testi tetiklemesin
             if (chat.IsOpen)
                 return;
-
-            if (Input.GetKeyDown(KeyCode.C))
-            {
-                chat.Open();
-            }
 
             if (Input.GetKeyDown(KeyCode.Y))
             {
