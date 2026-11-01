@@ -16,8 +16,9 @@ namespace Lumen.NPC
 
         public async Awaitable<string> SendAsync(IReadOnlyList<ChatMessage> messages)
         {
-            // 1) İsteği hazırla: Ollama'nın beklediği JSON
-            string json = JsonConvert.SerializeObject(new { model, stream = false, messages });
+            // 1) İsteği hazırla: Ollama'nın beklediği JSON. "format" şemayı zorunlu kılar (structured output);
+            //    yalnızca istemde JSON istemek yetmedi, model düz metin döndürebiliyordu.
+            string json = JsonConvert.SerializeObject(new { model, stream = false, format = NPCResponse.Schema, messages });
             byte[] body = Encoding.UTF8.GetBytes(json);
 
             // 2) Gönder ve bekle
@@ -36,8 +37,17 @@ namespace Lumen.NPC
             }
 
             // 3) Cevabı oku: { "message": { "role": "assistant", "content": "..." } }
-            JObject response = JObject.Parse(request.downloadHandler.text);
-            return (string)response["message"]?["content"];
+            //    Sunucu beklenmedik bir şey döndürürse Parse hata fırlatır; oyunu çökertmemek için yakalarız.
+            try
+            {
+                JObject response = JObject.Parse(request.downloadHandler.text);
+                return (string)response["message"]?["content"];
+            }
+            catch (JsonException e)
+            {
+                Debug.LogWarning($"Ollama cevabı okunamadı: {e.Message}");
+                return null;
+            }
         }
     }
 }
