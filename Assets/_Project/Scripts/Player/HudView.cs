@@ -1,4 +1,5 @@
 using Lumen.Companion;
+using Lumen.Level;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,6 +16,7 @@ namespace Lumen.Player
         [SerializeField] private MonoBehaviour companion;
         [SerializeField] private PlayerInteractor interactor;
         [SerializeField] private PlayerCommandIssuer commandIssuer;
+        [SerializeField] private CrystalCounter crystalCounter;
         [SerializeField] private float feedbackDuration = 2.5f;
 
         private ICompanionCommandReceiver receiver;
@@ -28,6 +30,12 @@ namespace Lumen.Player
             companion = companionReceiver;
             interactor = playerInteractor;
             commandIssuer = issuer;
+        }
+
+        /// <summary>Kristal toplandıkça "Kristal 1/3" gibi kısa bir mesaj gösterilir.</summary>
+        public void TrackCrystals(CrystalCounter counter)
+        {
+            crystalCounter = counter;
         }
 
         /// <summary>Diğer sistemlerin (örn. kristal toplama) kısa mesaj göstermesi için.</summary>
@@ -49,6 +57,11 @@ namespace Lumen.Player
             {
                 commandIssuer.Feedback += ShowFeedback;
             }
+
+            if (crystalCounter != null)
+            {
+                crystalCounter.CountChanged += ShowCrystalCount;
+            }
         }
 
         private void OnDisable()
@@ -57,6 +70,18 @@ namespace Lumen.Player
             {
                 commandIssuer.Feedback -= ShowFeedback;
             }
+
+            if (crystalCounter != null)
+            {
+                crystalCounter.CountChanged -= ShowCrystalCount;
+            }
+        }
+
+        private void ShowCrystalCount(int collected, int required)
+        {
+            ShowFeedback(collected >= required
+                ? $"Kristal {collected}/{required}: kapı açılıyor!"
+                : $"Kristal {collected}/{required}");
         }
 
         private void Update()
