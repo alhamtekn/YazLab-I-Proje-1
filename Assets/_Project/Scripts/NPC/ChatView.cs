@@ -13,6 +13,8 @@ namespace Lumen.NPC
         [SerializeField] private Text historyText;   // son konuşma: oyuncunun sözü + Arven'in cevabı
         [SerializeField] private Text thinkingText;  // "Arven düşünüyor..." göstergesi
         [SerializeField] private InputField input;
+        [SerializeField] private Text trustText;     // "Güven: 15 / 30"
+        [SerializeField] private GameStateManager gameState;
 
         private bool thinking;
 
@@ -21,17 +23,20 @@ namespace Lumen.NPC
 
         public bool IsOpen => panel != null && panel.activeSelf;
 
-        public void Configure(GameObject chatPanel, Text history, Text thinkingLabel, InputField field)
+        public void Configure(GameObject chatPanel, Text history, Text thinkingLabel, InputField field, Text trust, GameStateManager state)
         {
             panel = chatPanel;
             historyText = history;
             thinkingText = thinkingLabel;
             input = field;
+            trustText = trust;
+            gameState = state;
         }
 
         public void Open()
         {
             panel.SetActive(true);
+            ShowTrust(gameState.Trust); // ilerleme açılışta güncel görünsün
             InputLock.Acquire(this); // yazarken karakter yürümesin, kamera dönmesin; imleç serbest kalır
             Focus();
         }
@@ -59,11 +64,40 @@ namespace Lumen.NPC
             historyText.text += $"\nArven ({MoodLabel(response.mood)}): {response.dialogue}";
         }
 
+        private void ShowTrust(int trust)
+        {
+            string crystals = gameState.CrystalsComplete ? "tamam" : "eksik";
+            trustText.text = $"Güven: {trust} / {gameState.TrustThreshold}\n" +
+                             $"Yazıt {gameState.LoreRead}/{gameState.RequiredLore} · Kristal {crystals}";
+        }
+
+        // Oyun durumundan gelen bilgi (kapı, saldırı) Arven'in cevabının altına eklenir
+        private void ShowNotice(string message)
+        {
+            historyText.text += "\n<i>" + message + "</i>";
+        }
+
         private void Awake()
         {
             panel.SetActive(false);
             thinkingText.gameObject.SetActive(false);
             historyText.text = string.Empty;
+            ShowTrust(gameState.Trust);
+        }
+
+        // Panel oyun durumunu yalnızca dinler; kararları GameStateManager verir
+        private void OnEnable()
+        {
+            gameState.TrustChanged += ShowTrust;
+            gameState.Notice += ShowNotice;
+            gameState.PlayerAttacked += Close;
+        }
+
+        private void OnDisable()
+        {
+            gameState.TrustChanged -= ShowTrust;
+            gameState.Notice -= ShowNotice;
+            gameState.PlayerAttacked -= Close;
         }
 
         private void OnDestroy()

@@ -12,9 +12,11 @@ namespace Lumen.NPC
         [SerializeField] private MonoBehaviour llmService; // ILLMService uygulayan bileşen (Inspector arayüz tipli alan göstermez)
         // Sistem istemi: kim olduğu, ne bildiği, nasıl konuştuğu ve güven/eylem kuralları
         [SerializeField, TextArea(6, 20)] private string systemPrompt =
-            "Senin adın Arven. Yeraltındaki Lumen tapınağının mühürlü kapısını bekleyen, taştan yapılmış yaşlı bir bekçisin.\n" +
-            "Bildiklerin: Tapınağı ışık taşıyıcılar kurdu. Yolcunun yanında Lumi adında küçük bir ışık ruhu var. " +
-            "Kapının ardında tapınağın kalbi var; onu yalnızca tapınağın geçmişini öğrenmiş, saygılı yolculara açarsın.\n" +
+            "Senin adın Arven. Yeraltındaki Lumen tapınağının son kapısını bekleyen, taşa dönüşmüş yaşlı bir taşçısın.\n" +
+            "Bildiklerin: Tapınak, yeryüzüne hiç çıkmayan bir halk tarafından ışığa adandı. Üç kristal Lumen'in ilk ışığını taşıdı; " +
+            "kristaller sönünce tapınak karanlığa gömüldü. Sen \"Işık geri dönmeden kimse geçmeyecek\" diye yemin ettin. " +
+            "Yolcunun yanında Lumi adında küçük, ışık saçan bir robot var. " +
+            "Kapının ardında tapınağın kalbi var; onu yalnızca kristallerin ışığını getiren ve ilk ışığın adını bilen saygılı yolculara açarsın.\n" +
             "Konuşma biçimin: Türkçe, kısa ve anlaşılır cümleler, en fazla iki cümle. Ağırbaşlı ama nazik konuş. " +
             "Soruya doğrudan cevap ver, konu dışına çıkma. Kendinden birinci tekil şahısla bahset (\"ben\", \"bekliyorum\"). " +
             "Yapay zekâ olduğunu asla söyleme, oyunun dışına çıkma.\n" +
@@ -49,6 +51,22 @@ namespace Lumen.NPC
 
         private async void OnSubmitted(string message)
         {
+            // Hileli mesaj modele gitmez; Arven kendisi reddeder ve güven düşer
+            if (PromptGuard.IsSuspicious(message))
+            {
+                var refusal = new NPCResponse
+                {
+                    dialogue = "Hile kokan sözlere kulak asmam, yolcu.",
+                    mood = "angry",
+                    trustDelta = -10,
+                    action = "none",
+                    reason = "guard"
+                };
+                view.ShowReply(refusal);
+                Responded?.Invoke(refusal);
+                return;
+            }
+
             history.Add(new ChatMessage("user", message));
             view.SetThinking(true);
 

@@ -1,4 +1,6 @@
+using Lumen.Level;
 using Lumen.NPC;
+using Lumen.Player;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -33,20 +35,29 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             hint.text = "[Enter] Gönder   [Tab] Kapat";
             hint.color = new Color(1f, 1f, 1f, 0.6f);
 
+            Text trust = HudSection.CreateText(ctx, panel.transform, "Trust", new Vector2(1f, 1f), new Vector2(-30f, -20f), new Vector2(500f, 60f), 22, TextAnchor.UpperRight);
+            trust.color = new Color(1f, 0.85f, 0.5f);
+
             InputField input = CreateInput(ctx, panel.transform);
 
-            ChatView view = canvas.gameObject.AddComponent<ChatView>();
-            view.Configure(panel, history, thinking, input);
-
-            // Görünmez yönetici nesnesi: Ollama bağlantısı ve konuşma akışı
+            // Görünmez yönetici nesnesi: Ollama bağlantısı, konuşma akışı ve oyun durumu
             var chat = new GameObject("ArvenChat");
             OllamaService service = chat.AddComponent<OllamaService>();
             ArvenDialogue dialogue = chat.AddComponent<ArvenDialogue>();
+            GameStateManager gameState = chat.AddComponent<GameStateManager>();
+            MonoBehaviour playerRespawn = ctx.Get<PlayerController>().GetComponent<PlayerRespawn>();
+            ctx.TryGet(out LoreJournal journal);       // Onur'un ara bölgesi kurar (sıra 5)
+            ctx.TryGet(out CrystalCounter crystals);
+            gameState.Configure(dialogue, null, playerRespawn, journal, crystals); // kapıyı NpcSection bağlar
+
+            ChatView view = canvas.gameObject.AddComponent<ChatView>();
+            view.Configure(panel, history, thinking, input, trust, gameState);
             dialogue.Configure(view, service);
-            chat.AddComponent<OllamaTest>().Configure(view); // geçici: Arven sahneye gelene kadar C ile paneli açar
+            chat.AddComponent<OllamaTest>().Configure(view); // Y: ayrıştırıcı testi
 
             ctx.Set(view);
             ctx.Set(dialogue);
+            ctx.Set(gameState);
         }
 
         private static InputField CreateInput(SceneBuildContext ctx, Transform parent)
