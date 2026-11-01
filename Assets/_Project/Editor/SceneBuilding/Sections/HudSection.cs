@@ -1,4 +1,5 @@
 using Lumen.Companion;
+using Lumen.Level;
 using Lumen.Player;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -31,6 +32,11 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             HudView hud = canvas.gameObject.AddComponent<HudView>();
             hud.Configure(state, prompt, feedback, ctx.Get<CompanionController>(), ctx.Get<PlayerInteractor>(), ctx.Get<PlayerCommandIssuer>());
+            if (ctx.TryGet(out CrystalCounter crystals))
+            {
+                hud.TrackCrystals(crystals);
+            }
+
             ctx.Set(hud);
         }
 
