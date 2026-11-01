@@ -1,46 +1,33 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Lumen.NPC
 {
     /// <summary>
-    /// Geçici test (sohbet arayüzü gelince silinecek):
-    /// T = Ollama'ya soru gönderir, cevabı ayrıştırıp Console'a yazar.
+    /// Geçici test (Arven sahneye gelince C kısmı silinecek):
+    /// C = Arven henüz sahnede olmadığı için sohbet panelini doğrudan açar.
     /// Y = Ollama'ya gitmeden ayrıştırıcıyı bozuk/hatalı örneklerle dener.
     /// </summary>
     public sealed class OllamaTest : MonoBehaviour
     {
-        [SerializeField] private OllamaService service;
+        [SerializeField] private ChatView chat;
 
-        private bool waiting;
+        public void Configure(ChatView view) => chat = view;
 
-        private async void Update()
+        private void Update()
         {
+            // Panel açıkken oyuncu yazı yazıyordur; C ve Y harfleri test tetiklemesin
+            if (chat.IsOpen)
+                return;
+
+            if (Input.GetKeyDown(KeyCode.C))
+            {
+                chat.Open();
+            }
+
             if (Input.GetKeyDown(KeyCode.Y))
             {
                 TestParser();
             }
-
-            if (!Input.GetKeyDown(KeyCode.T) || waiting)
-                return;
-
-            waiting = true;
-            Debug.Log("Arven'e soruldu, bekleniyor...");
-
-            var messages = new List<ChatMessage>
-            {
-                new ChatMessage("system", "Sen Arven adında, yeraltı tapınağının kapısını koruyan taş bir bekçisin. Türkçe, ağırbaşlı ve en fazla iki cümleyle konuş. Yapay zekâ olduğunu asla söyleme. " +
-                    "Yalnızca şu JSON biçiminde cevap ver: {\"dialogue\": \"söylediğin\", \"mood\": \"neutral|friendly|suspicious|angry\", \"trustDelta\": -20 ile 20 arası tam sayı, \"action\": \"none|open_door|attack\", \"reason\": \"kısa gerekçe\"}"),
-                new ChatMessage("user", "Merhaba, kimsin?")
-            };
-
-            float start = Time.realtimeSinceStartup;
-            string reply = await service.SendAsync(messages);
-            float seconds = Time.realtimeSinceStartup - start;
-
-            Debug.Log($"Ham cevap ({seconds:0.0} sn): {reply}");
-            Log("Ayrıştırılmış", NPCResponseParser.Parse(reply));
-            waiting = false;
         }
 
         // Rapordaki hata yönetimi testleri için: her örnekte oyun çökmemeli, güvenli bir cevap çıkmalı.
