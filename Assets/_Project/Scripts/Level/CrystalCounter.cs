@@ -1,16 +1,18 @@
 using System;
+using Lumen.Core;
 using UnityEngine;
 
 namespace Lumen.Level
 {
     /// <summary>
     /// Ara bölgedeki kristalleri izler. Her toplamada CountChanged, gereken sayıya
-    /// ulaşıldığında bir kez AllCollected olayını tetikler.
+    /// ulaşıldığında bir kez AllCollected olayını tetikler ve bağlı IActivatable nesneleri (örn. kapı) açar.
     /// </summary>
     public class CrystalCounter : MonoBehaviour
     {
         [SerializeField] private CrystalPickup[] crystals = Array.Empty<CrystalPickup>();
         [SerializeField] private int required = 3;
+        [SerializeField] private MonoBehaviour[] linkedActivatables = Array.Empty<MonoBehaviour>();
 
         public event Action<int, int> CountChanged;
 
@@ -22,11 +24,12 @@ namespace Lumen.Level
 
         public bool IsComplete => Collected >= required;
 
-        public void Configure(CrystalPickup[] trackedCrystals, int requiredCount)
+        public void Configure(CrystalPickup[] trackedCrystals, int requiredCount, MonoBehaviour[] linked)
         {
             Unsubscribe();
             crystals = trackedCrystals;
             required = requiredCount;
+            linkedActivatables = linked;
             if (isActiveAndEnabled)
             {
                 Subscribe();
@@ -77,6 +80,11 @@ namespace Lumen.Level
 
             if (IsComplete)
             {
+                foreach (MonoBehaviour behaviour in linkedActivatables)
+                {
+                    (behaviour as IActivatable)?.Activate();
+                }
+
                 AllCollected?.Invoke();
             }
         }

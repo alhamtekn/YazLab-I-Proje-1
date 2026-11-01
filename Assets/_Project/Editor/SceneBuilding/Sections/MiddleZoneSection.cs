@@ -31,9 +31,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             zone.SetParent(ctx.Root("Level"), false);
 
             BuildObstacles(ctx, zone);
-            BuildCrystals(ctx, zone);
+            CrystalGate gate = BuildGate(ctx, zone);
+            BuildCrystals(ctx, zone, gate);
             BuildInscriptions(ctx, zone);
-            BuildGate(ctx, zone);
             BuildLighting(ctx, zone);
         }
 
@@ -55,8 +55,11 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("LowWall_Back", obstacles, new Vector3(5f, 0.6f, 37.5f), new Vector3(5f, 1.2f, 0.5f), stone);
         }
 
-        /// <summary>Kristaller karanlık köşelerde, alçak duvarların arkasında; kendi ışıklarıyla bulunur.</summary>
-        private static void BuildCrystals(SceneBuildContext ctx, Transform zone)
+        /// <summary>
+        /// Kristaller karanlık köşelerde, alçak duvarların arkasında; kendi ışıklarıyla bulunur.
+        /// Sayaç tamamlanınca kapıyı açar (şalter–köprü ilişkisiyle aynı yapı).
+        /// </summary>
+        private static void BuildCrystals(SceneBuildContext ctx, Transform zone, CrystalGate gate)
         {
             Transform crystalsRoot = new GameObject("Crystals").transform;
             crystalsRoot.SetParent(zone, false);
@@ -68,7 +71,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             }
 
             CrystalCounter counter = crystalsRoot.gameObject.AddComponent<CrystalCounter>();
-            counter.Configure(crystals.ToArray(), crystals.Count);
+            counter.Configure(crystals.ToArray(), crystals.Count, new MonoBehaviour[] { gate });
             ctx.Set(counter);
         }
 
@@ -154,7 +157,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         /// Bekçi bölgesine açılan kapı. Kapı kanadı Ignore Raycast katmanında olduğu için NavMesh'e
         /// dahil edilmez; yol pişirilir ama kapı kapalıyken NavMeshObstacle geçişi keser.
         /// </summary>
-        private static void BuildGate(SceneBuildContext ctx, Transform zone)
+        private static CrystalGate BuildGate(SceneBuildContext ctx, Transform zone)
         {
             Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
             Transform gate = new GameObject("CrystalGate").transform;
@@ -171,14 +174,24 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             GameObject door = ctx.Box("GateDoor", gate, new Vector3(0f, DoorHeight * 0.5f, DoorZ), new Vector3(DoorHalfWidth * 2f, DoorHeight, 0.4f), doorMat, true, 2);
 
             Material socketMat = ctx.Mat("CrystalSocket", new Color(0.12f, 0.15f, 0.2f), new Color(0.05f, 0.1f, 0.15f));
+            var sockets = new List<Renderer>();
             for (int i = -1; i <= 1; i++)
             {
-                ctx.Primitive(PrimitiveType.Sphere, "Socket", door.transform, new Vector3(i * 0.25f, 0.2f, -0.55f), new Vector3(0.12f, 0.08f, 0.3f), socketMat);
+                GameObject socket = ctx.Primitive(PrimitiveType.Sphere, "Socket", door.transform, new Vector3(i * 0.25f, 0.2f, -0.55f), new Vector3(0.12f, 0.08f, 0.3f), socketMat);
+                sockets.Add(socket.GetComponent<Renderer>());
             }
 
             NavMeshObstacle obstacle = door.AddComponent<NavMeshObstacle>();
             obstacle.shape = NavMeshObstacleShape.Box;
             obstacle.carving = true;
+
+            Material litSocketMat = ctx.Mat("CrystalSocketLit", new Color(0.45f, 0.85f, 1f), new Color(0.6f, 1.6f, 2.2f), 0.1f, 0.9f);
+            Light gateLight = ctx.PointLight("GateLight", gate, new Vector3(0f, 2.2f, DoorZ - 1f), new Color(0.45f, 0.85f, 1f), 6f, 1.6f);
+
+            CrystalGate crystalGate = gate.gameObject.AddComponent<CrystalGate>();
+            crystalGate.Configure(door.transform, sockets.ToArray(), litSocketMat, gateLight);
+            ctx.Set(crystalGate);
+            return crystalGate;
         }
 
         /// <summary>Galeri kasıtlı olarak karanlık: az sayıda meşale, bazıları sönük. Asıl ışık Lumi ve kristallerden gelir.</summary>
