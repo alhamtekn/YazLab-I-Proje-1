@@ -1,0 +1,113 @@
+using System.Collections;
+using System.Linq;
+using Lumen.Level;
+using Lumen.Player;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
+
+namespace Lumen.Tests
+{
+    /// <summary>
+    /// Ara bölge (kristal galerisi) testleri: kristal toplama, kapının açılması ve yazıt günlüğü.
+    /// </summary>
+    public class MiddleZoneTests
+    {
+        private const string SceneName = "Lumen";
+        private const float GateTimeoutSeconds = 8f;
+
+        [UnityTest]
+        public IEnumerator ThreeCrystalsCollected_OpensGate()
+        {
+            yield return LoadScene();
+            CrystalCounter counter = Object.FindAnyObjectByType<CrystalCounter>();
+            CrystalGate gate = Object.FindAnyObjectByType<CrystalGate>();
+            CrystalPickup[] crystals = Object.FindObjectsByType<CrystalPickup>(FindObjectsSortMode.None);
+
+            Assert.AreEqual(3, crystals.Length, "Ara bölgede 3 kristal olmalı.");
+            Assert.IsFalse(gate.IsActivated, "Kapı başta kapalı olmalı.");
+
+            crystals[0].Collect();
+            crystals[1].Collect();
+            yield return null;
+            Assert.AreEqual(2, counter.Collected);
+            Assert.IsFalse(gate.IsActivated, "İki kristalle kapı açılmamalı.");
+
+            bool opened = false;
+            gate.Activated += () => opened = true;
+            crystals[2].Collect();
+            Assert.IsTrue(counter.IsComplete);
+            Assert.IsTrue(gate.IsActivated, "Üçüncü kristalle kapı tetiklenmeli.");
+
+            yield return WaitUntilOrTimeout(() => opened, GateTimeoutSeconds);
+            Assert.IsTrue(opened, "Kapı açılma animasyonunu bitirmedi.");
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerWalkingIntoCrystal_CollectsItOnce()
+        {
+            yield return LoadScene();
+            CrystalCounter counter = Object.FindAnyObjectByType<CrystalCounter>();
+            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+            CrystalPickup crystal = Object.FindObjectsByType<CrystalPickup>(FindObjectsSortMode.None)
+                .OrderBy(c => Vector3.Distance(c.transform.position, player.transform.position))
+                .First();
+
+            player.Teleport(crystal.transform.position + Vector3.up * 0.05f);
+            yield return WaitUntilOrTimeout(() => crystal.IsCollected, 1f);
+
+            Assert.IsTrue(crystal.IsCollected, "Oyuncu kristalin üzerine gelince toplanmalı.");
+            Assert.AreEqual(1, counter.Collected);
+
+            crystal.Collect();
+            Assert.AreEqual(1, counter.Collected, "Aynı kristal iki kez sayılmamalı.");
+        }
+
+        [UnityTest]
+        public IEnumerator ReadingInscription_AddsToJournalOnceAndOpensReader()
+        {
+            yield return LoadScene();
+            LoreJournal journal = Object.FindAnyObjectByType<LoreJournal>();
+            LoreReaderView reader = Object.FindAnyObjectByType<LoreReaderView>();
+            LoreInscription inscription = Object.FindAnyObjectByType<LoreInscription>();
+            PlayerController player = Object.FindAnyObjectByType<PlayerController>();
+
+            string added = null;
+            journal.EntryAdded += entry => added = entry;
+
+            inscription.Interact(player.gameObject);
+            Assert.AreEqual(1, journal.Entries.Count);
+            StringAssert.Contains(inscription.Title, added);
+            Assert.IsTrue(reader.IsOpen, "Okuma paneli açılmalı.");
+
+            reader.Close();
+            inscription.Interact(player.gameObject);
+            Assert.AreEqual(1, journal.Entries.Count, "Aynı yazıt günlüğe iki kez eklenmemeli.");
+            reader.Close();
+            yield return null;
+        }
+
+        private static IEnumerator LoadScene()
+        {
+            Time.timeScale = 1f;
+            AsyncOperation load = SceneManager.LoadSceneAsync(SceneName, LoadSceneMode.Single);
+            while (!load.isDone)
+            {
+                yield return null;
+            }
+
+            yield return null;
+            yield return null;
+        }
+
+        private static IEnumerator WaitUntilOrTimeout(System.Func<bool> condition, float timeout)
+        {
+            float start = Time.time;
+            while (!condition() && Time.time - start < timeout)
+            {
+                yield return null;
+            }
+        }
+    }
+}
