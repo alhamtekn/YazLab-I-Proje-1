@@ -65,6 +65,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
             killZone.AddComponent<KillZone>();
+
+            // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
+            ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
         }
 
         /// <summary>

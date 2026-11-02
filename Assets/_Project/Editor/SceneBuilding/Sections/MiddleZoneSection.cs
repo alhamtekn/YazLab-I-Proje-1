@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Lumen.Core;
 using Lumen.Level;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -45,9 +46,20 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform obstacles = new GameObject("Obstacles").transform;
             obstacles.SetParent(zone, false);
 
+            // İlk sütun Obstacle_Prefab olarak kaydedilir, diğerleri bu prefab'dan üretilir.
+            GameObject pillarPrefab = null;
             foreach (Vector2 p in new[] { new Vector2(-3f, 29f), new Vector2(3f, 29f), new Vector2(-3f, 35f), new Vector2(3f, 35f) })
             {
-                ctx.Box("Pillar", obstacles, new Vector3(p.x, EnvironmentSection.WallHeight * 0.5f, p.y), new Vector3(1f, EnvironmentSection.WallHeight, 1f), pillarMat);
+                var position = new Vector3(p.x, EnvironmentSection.WallHeight * 0.5f, p.y);
+                if (pillarPrefab == null)
+                {
+                    GameObject first = ctx.Box("Pillar", obstacles, position, new Vector3(1f, EnvironmentSection.WallHeight, 1f), pillarMat);
+                    pillarPrefab = ctx.SavePrefab(first, "Obstacle_Prefab");
+                    continue;
+                }
+
+                var pillar = (GameObject)PrefabUtility.InstantiatePrefab(pillarPrefab, obstacles);
+                pillar.transform.localPosition = position;
             }
 
             ctx.Box("LowWall_Left", obstacles, new Vector3(-5.5f, 0.6f, 32f), new Vector3(4f, 1.2f, 0.5f), stone);
