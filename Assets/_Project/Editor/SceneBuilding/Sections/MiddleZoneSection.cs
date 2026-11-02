@@ -114,8 +114,13 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform crystalsRoot = new GameObject("Crystals").transform;
             crystalsRoot.SetParent(zone, false);
 
-            var crystals = new List<CrystalPickup>();
-            foreach (Vector2 p in new[] { new Vector2(-6.5f, 34f), new Vector2(6.5f, 25.8f), new Vector2(6.5f, 39f) })
+            var crystals = new List<CrystalPickup>
+            {
+                // A: Karanlık oda. Işığı neredeyse yok; ancak Lumi'nin ışığıyla görülür (G ile Lumi'yi çağır).
+                BuildCrystal(ctx, crystalsRoot, new Vector3(-12f, 0f, 37f), dark: true),
+            };
+
+            foreach (Vector2 p in new[] { new Vector2(6.5f, 25.8f), new Vector2(6.5f, 39f) })
             {
                 crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(p.x, 0f, p.y)));
             }
@@ -125,7 +130,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Set(counter);
         }
 
-        private static CrystalPickup BuildCrystal(SceneBuildContext ctx, Transform parent, Vector3 position)
+        private static CrystalPickup BuildCrystal(SceneBuildContext ctx, Transform parent, Vector3 position, bool dark = false)
         {
             var root = new GameObject("Crystal") { layer = GameLayers.InteractableIndex };
             root.transform.SetParent(parent, false);
@@ -139,13 +144,16 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform visual = new GameObject("Visual").transform;
             visual.SetParent(root.transform, false);
             visual.localPosition = new Vector3(0f, 0.9f, 0f);
-            Material crystalMat = ctx.Mat("Crystal", new Color(0.45f, 0.85f, 1f), new Color(0.6f, 1.6f, 2.2f), 0.1f, 0.9f);
+            // Karanlık odadaki kristal kendi kendine parlamaz; ışık vurunca görünür.
+            Material crystalMat = dark
+                ? ctx.Mat("CrystalDim", new Color(0.45f, 0.85f, 1f), new Color(0.02f, 0.05f, 0.07f), 0.1f, 0.9f)
+                : ctx.Mat("Crystal", new Color(0.45f, 0.85f, 1f), new Color(0.6f, 1.6f, 2.2f), 0.1f, 0.9f);
             GameObject shard = ctx.Primitive(PrimitiveType.Cube, "Shard", visual, Vector3.zero, new Vector3(0.3f, 0.55f, 0.3f), crystalMat);
             shard.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
 
             ctx.Box("Pedestal", root.transform, new Vector3(0f, 0.2f, 0f), new Vector3(0.6f, 0.4f, 0.6f), ctx.Mat("DarkStone", new Color(0.1f, 0.1f, 0.12f)), false);
 
-            Light glow = ctx.PointLight("Glow", root.transform, new Vector3(0f, 1f, 0f), new Color(0.45f, 0.85f, 1f), 4f, 1.2f);
+            Light glow = ctx.PointLight("Glow", root.transform, new Vector3(0f, 1f, 0f), new Color(0.45f, 0.85f, 1f), dark ? 1.5f : 4f, dark ? 0.3f : 1.2f);
 
             CrystalPickup pickup = root.AddComponent<CrystalPickup>();
             pickup.Configure(visual, glow);
