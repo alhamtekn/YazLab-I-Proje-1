@@ -15,6 +15,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     /// Yerleşim (X sağa, Z ileri, birim metre):
     ///   Galeri  x[-8, 8]  z[24, 40]
     ///   Kapı    x[-1.5, 1.5] z=40  (ötesi bekçi bölgesi, Geliştirici 2)
+    ///   Kristal odaları (6×6 m, galerinin yan duvarlarından 2 m'lik kapılarla girilir):
+    ///     A Karanlık oda   x[-14, -8] z[33, 39]     kapı x=-8 z[34, 36]
+    ///     B Sütun labirenti x[8, 14]  z[26, 32]     kapı x=8  z[27, 29]
+    ///     C Diken odası     x[8, 14]  z[33.5, 39.5] kapı x=8  z[35, 37]
     ///
     /// Paylaşılanlar: LoreJournal (NPC okur), CrystalCounter, LoreInscription[].
     /// </summary>
@@ -23,6 +27,11 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         public const float DoorZ = 40f;
         public const float DoorHalfWidth = 1.5f;
         public const float DoorHeight = 3.2f;
+        public const float RoomDepth = 6f;
+
+        /// <summary>Dış duvarlardaki oda kapılarının z aralıkları; EnvironmentSection duvarı bunlara göre böler.</summary>
+        public static readonly Vector2[] WestRoomDoors = { new Vector2(34f, 36f) };
+        public static readonly Vector2[] EastRoomDoors = { new Vector2(27f, 29f), new Vector2(35f, 37f) };
 
         public int Order => 5;
 
@@ -31,11 +40,80 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform zone = new GameObject("MiddleZone").transform;
             zone.SetParent(ctx.Root("Level"), false);
 
+            BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f);
+            BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f));
+            BuildSpikeRoom(ctx, BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f));
             BuildObstacles(ctx, zone);
             CrystalGate gate = BuildGate(ctx, zone);
             BuildCrystals(ctx, zone, gate);
             BuildInscriptions(ctx, zone);
             BuildLighting(ctx, zone);
+        }
+
+        /// <summary>
+        /// Galerinin dışındaki oda: zemin ve üç duvar (galeri tarafındaki duvar EnvironmentSection'da, kapı boşluğuyla).
+        /// Normal katmanda kalır ki NavMesh'e dahil olsun.
+        /// </summary>
+        private static Transform BuildRoomShell(SceneBuildContext ctx, Transform zone, string name, bool east, float zMin, float zMax)
+        {
+            Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
+            Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
+            Transform room = new GameObject(name).transform;
+            room.SetParent(zone, false);
+
+            float side = east ? 1f : -1f;
+            float inner = 8f * side;
+            float outer = (8f + RoomDepth) * side;
+            float zCenter = (zMin + zMax) * 0.5f;
+            float wallY = EnvironmentSection.WallHeight * 0.5f;
+
+            ctx.Box("Floor", room, new Vector3((inner + outer + 0.5f * side) * 0.5f, -0.25f, zCenter), new Vector3(RoomDepth + 0.5f, 0.5f, zMax - zMin + 0.5f), floor);
+            ctx.Box("Wall_Outer", room, new Vector3(outer + 0.25f * side, wallY, zCenter), new Vector3(0.5f, EnvironmentSection.WallHeight, zMax - zMin + 0.5f), stone);
+            float sideWallX = (inner + 0.5f * side + outer + 0.5f * side) * 0.5f;
+            ctx.Box("Wall_South", room, new Vector3(sideWallX, wallY, zMin), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+            ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+            return room;
+        }
+
+        /// <summary>
+        /// B odası: iki iç duvar ve iki sütunla yılan biçimli yol. Kapıdan kuzeye, ilk duvarın ucundan doğuya,
+        /// güneye inip ikinci duvarın altından geçilir; kristal doğu koridorunun kuzey ucunda.
+        /// Koridorlar 1.45–1.95 m (oyuncu yarıçapı 0.35, Lumi 0.3).
+        /// </summary>
+        private static void BuildMaze(SceneBuildContext ctx, Transform room)
+        {
+            Material stone = ctx.Mat("PillarStone", new Color(0.33f, 0.31f, 0.3f));
+            float h = EnvironmentSection.WallHeight;
+
+            ctx.Box("MazeWall_1", room, new Vector3(10.6f, h * 0.5f, 28.125f), new Vector3(0.3f, h, 3.75f), stone);
+            ctx.Box("MazeWall_2", room, new Vector3(12.4f, h * 0.5f, 29.875f), new Vector3(0.3f, h, 3.75f), stone);
+            ctx.Box("MazePillar_1", room, new Vector3(9.1f, h * 0.5f, 31.2f), new Vector3(0.5f, h, 0.5f), stone);
+            ctx.Box("MazePillar_2", room, new Vector3(13.5f, h * 0.5f, 26.8f), new Vector3(0.5f, h, 0.5f), stone);
+            ctx.Torch("Torch_Maze", room, new Vector3(13.8f, 2.4f, 28.5f));
+        }
+
+        /// <summary>
+        /// C odası: kapı ile kristal arasında 2×3 diken tuzağı (tuzak odasıyla aynı sınıflar).
+        /// Tuzaklar odanın tüm genişliğini kapladığından içlerinden geçmek gerekir; yakalanan oyuncu
+        /// ya da Lumi oda kapısına geri döner. Bu alan tuzak odasınınkinden ayrıdır ve ctx'e konmaz.
+        /// </summary>
+        private static void BuildSpikeRoom(SceneBuildContext ctx, Transform room)
+        {
+            Transform resetPoint = new GameObject("SpikeRoomResetPoint").transform;
+            resetPoint.SetParent(room, false);
+            resetPoint.localPosition = new Vector3(9f, 0f, 36f);
+
+            var traps = new List<SpikeTrap>();
+            foreach (float x in new[] { 10.4f, 12f })
+            {
+                foreach (float z in new[] { 35f, 36.6f, 38.2f })
+                {
+                    traps.Add(EnvironmentSection.BuildSpikeTrap(ctx, room, new Vector3(x, 0f, z)));
+                }
+            }
+
+            room.gameObject.AddComponent<SpikeTrapField>().Configure(traps.ToArray(), resetPoint);
+            ctx.Torch("Torch_Spikes", room, new Vector3(13.8f, 2.4f, 34.3f));
         }
 
         /// <summary>Sütunlar ve alçak duvarlar. Aralıklar oyuncu ve Lumi için en az 2 m.</summary>
@@ -63,8 +141,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             }
 
             ctx.Box("LowWall_Left", obstacles, new Vector3(-5.5f, 0.6f, 32f), new Vector3(4f, 1.2f, 0.5f), stone);
-            ctx.Box("LowWall_Right", obstacles, new Vector3(5.5f, 0.6f, 27.5f), new Vector3(4f, 1.2f, 0.5f), stone);
-            ctx.Box("LowWall_Back", obstacles, new Vector3(5f, 0.6f, 37.5f), new Vector3(5f, 1.2f, 0.5f), stone);
+            // Sağdaki alçak duvarlar oda kapılarının önünde 2 m boşluk bırakacak kadar kısa.
+            ctx.Box("LowWall_Right", obstacles, new Vector3(4.5f, 0.6f, 27.5f), new Vector3(3f, 1.2f, 0.5f), stone);
+            ctx.Box("LowWall_Back", obstacles, new Vector3(4.25f, 0.6f, 37.5f), new Vector3(3.5f, 1.2f, 0.5f), stone);
         }
 
         /// <summary>
@@ -76,18 +155,24 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform crystalsRoot = new GameObject("Crystals").transform;
             crystalsRoot.SetParent(zone, false);
 
-            var crystals = new List<CrystalPickup>();
-            foreach (Vector2 p in new[] { new Vector2(-6.5f, 34f), new Vector2(6.5f, 25.8f), new Vector2(6.5f, 39f) })
+            var crystals = new List<CrystalPickup>
             {
-                crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(p.x, 0f, p.y)));
-            }
+                // A: Karanlık oda. Işığı neredeyse yok; ancak Lumi'nin ışığıyla görülür (G ile Lumi'yi çağır).
+                BuildCrystal(ctx, crystalsRoot, new Vector3(-12f, 0f, 37f), dark: true),
+            };
+
+            // B: Sütun labirentinin en uç köşesi.
+            crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(13.3f, 0f, 30.8f)));
+
+            // C: Diken odasında, tuzak şeridinin arkasında.
+            crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(13.2f, 0f, 38.2f)));
 
             CrystalCounter counter = crystalsRoot.gameObject.AddComponent<CrystalCounter>();
             counter.Configure(crystals.ToArray(), crystals.Count, new MonoBehaviour[] { gate });
             ctx.Set(counter);
         }
 
-        private static CrystalPickup BuildCrystal(SceneBuildContext ctx, Transform parent, Vector3 position)
+        private static CrystalPickup BuildCrystal(SceneBuildContext ctx, Transform parent, Vector3 position, bool dark = false)
         {
             var root = new GameObject("Crystal") { layer = GameLayers.InteractableIndex };
             root.transform.SetParent(parent, false);
@@ -101,13 +186,16 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform visual = new GameObject("Visual").transform;
             visual.SetParent(root.transform, false);
             visual.localPosition = new Vector3(0f, 0.9f, 0f);
-            Material crystalMat = ctx.Mat("Crystal", new Color(0.45f, 0.85f, 1f), new Color(0.6f, 1.6f, 2.2f), 0.1f, 0.9f);
+            // Karanlık odadaki kristal kendi kendine parlamaz; ışık vurunca görünür.
+            Material crystalMat = dark
+                ? ctx.Mat("CrystalDim", new Color(0.45f, 0.85f, 1f), new Color(0.02f, 0.05f, 0.07f), 0.1f, 0.9f)
+                : ctx.Mat("Crystal", new Color(0.45f, 0.85f, 1f), new Color(0.6f, 1.6f, 2.2f), 0.1f, 0.9f);
             GameObject shard = ctx.Primitive(PrimitiveType.Cube, "Shard", visual, Vector3.zero, new Vector3(0.3f, 0.55f, 0.3f), crystalMat);
             shard.transform.localRotation = Quaternion.Euler(45f, 0f, 45f);
 
             ctx.Box("Pedestal", root.transform, new Vector3(0f, 0.2f, 0f), new Vector3(0.6f, 0.4f, 0.6f), ctx.Mat("DarkStone", new Color(0.1f, 0.1f, 0.12f)), false);
 
-            Light glow = ctx.PointLight("Glow", root.transform, new Vector3(0f, 1f, 0f), new Color(0.45f, 0.85f, 1f), 4f, 1.2f);
+            Light glow = ctx.PointLight("Glow", root.transform, new Vector3(0f, 1f, 0f), new Color(0.45f, 0.85f, 1f), dark ? 1.5f : 4f, dark ? 0.3f : 1.2f);
 
             CrystalPickup pickup = root.AddComponent<CrystalPickup>();
             pickup.Configure(visual, glow);
@@ -213,7 +301,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             lights.SetParent(zone, false);
             ctx.Torch("Torch_Gallery_A", lights, new Vector3(7.8f, 2.4f, 29.5f));
             ctx.Torch("Torch_Gallery_Dead_A", lights, new Vector3(-7.8f, 2.4f, 31.5f), false);
-            ctx.Torch("Torch_Gallery_Dead_B", lights, new Vector3(7.8f, 2.4f, 35.5f), false);
+            ctx.Torch("Torch_Gallery_Dead_B", lights, new Vector3(7.8f, 2.4f, 33.8f), false);
             ctx.Torch("Torch_Gate_L", lights, new Vector3(-2.2f, 2.6f, DoorZ - 0.45f));
             ctx.Torch("Torch_Gate_R", lights, new Vector3(2.2f, 2.6f, DoorZ - 0.45f));
         }

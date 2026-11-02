@@ -56,10 +56,11 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             float wallCenterY = (WallHeight + PitDepth) * 0.5f;
             float wallSizeY = WallHeight - PitDepth;
             ctx.Box("Wall_Back", shell, new Vector3(-5f, wallCenterY, -0.25f), new Vector3(26.5f, wallSizeY, 0.5f), stone);
-            ctx.Box("Wall_Right", shell, new Vector3(8.25f, wallCenterY, 29f), new Vector3(0.5f, wallSizeY, 59f), stone);
+            // Galerinin yan duvarlarında kristal odalarına açılan kapı boşlukları var (MiddleZoneSection).
+            WallWithOpenings(ctx, shell, "Wall_Right", 8.25f, -0.5f, 58.5f, MiddleZoneSection.EastRoomDoors, stone);
             ctx.Box("Wall_TrapRoom_Left", shell, new Vector3(-18.25f, wallCenterY, 8f), new Vector3(0.5f, wallSizeY, 16f), stone);
             ctx.Box("Wall_TrapRoom_Front", shell, new Vector3(-13.25f, wallCenterY, 16.25f), new Vector3(10.5f, wallSizeY, 0.5f), stone);
-            ctx.Box("Wall_Left_Far", shell, new Vector3(-8.25f, wallCenterY, 37.25f), new Vector3(0.5f, wallSizeY, 42.5f), stone);
+            WallWithOpenings(ctx, shell, "Wall_Left_Far", -8.25f, 16f, 58.5f, MiddleZoneSection.WestRoomDoors, stone);
             ctx.Box("Wall_End", shell, new Vector3(0f, wallCenterY, 58.25f), new Vector3(17f, wallSizeY, 0.5f), stone);
 
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
@@ -68,6 +69,28 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
+        }
+
+        /// <summary>
+        /// x sabitinde, z boyunca uzanan dış duvar. openings içindeki z aralıkları (küçükten büyüğe)
+        /// kapı boşluğu olarak bırakılır; boşlukların üstüne lento konur.
+        /// </summary>
+        private static void WallWithOpenings(SceneBuildContext ctx, Transform parent, string name, float x, float zStart, float zEnd, Vector2[] openings, Material material)
+        {
+            float wallCenterY = (WallHeight + PitDepth) * 0.5f;
+            float wallSizeY = WallHeight - PitDepth;
+            float lintelHeight = WallHeight - MiddleZoneSection.DoorHeight;
+            float z = zStart;
+            int part = 0;
+
+            foreach (Vector2 opening in openings)
+            {
+                ctx.Box($"{name}_{part++}", parent, new Vector3(x, wallCenterY, (z + opening.x) * 0.5f), new Vector3(0.5f, wallSizeY, opening.x - z), material);
+                ctx.Box($"{name}_Lintel", parent, new Vector3(x, MiddleZoneSection.DoorHeight + lintelHeight * 0.5f, (opening.x + opening.y) * 0.5f), new Vector3(0.5f, lintelHeight, opening.y - opening.x), material);
+                z = opening.y;
+            }
+
+            ctx.Box($"{name}_{part}", parent, new Vector3(x, wallCenterY, (z + zEnd) * 0.5f), new Vector3(0.5f, wallSizeY, zEnd - z), material);
         }
 
         /// <summary>
@@ -130,7 +153,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Torch("Torch_TrapRoom_B", room, new Vector3(-17.8f, 2.4f, 13f));
         }
 
-        private static SpikeTrap BuildSpikeTrap(SceneBuildContext ctx, Transform parent, Vector3 position)
+        /// <summary>1.6 m'lik diken tuzağı; kristal odalarındaki diken odası da bunu kullanır.</summary>
+        internal static SpikeTrap BuildSpikeTrap(SceneBuildContext ctx, Transform parent, Vector3 position)
         {
             const float tile = 1.6f;
             var root = new GameObject("SpikeTrap") { layer = GameLayers.HazardIndex };
