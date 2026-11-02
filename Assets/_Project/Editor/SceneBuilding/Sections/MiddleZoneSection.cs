@@ -42,7 +42,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f);
             BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f));
-            BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f);
+            BuildSpikeRoom(ctx, BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f));
             BuildObstacles(ctx, zone);
             CrystalGate gate = BuildGate(ctx, zone);
             BuildCrystals(ctx, zone, gate);
@@ -90,6 +90,30 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("MazePillar_1", room, new Vector3(9.1f, h * 0.5f, 31.2f), new Vector3(0.5f, h, 0.5f), stone);
             ctx.Box("MazePillar_2", room, new Vector3(13.5f, h * 0.5f, 26.8f), new Vector3(0.5f, h, 0.5f), stone);
             ctx.Torch("Torch_Maze", room, new Vector3(13.8f, 2.4f, 28.5f));
+        }
+
+        /// <summary>
+        /// C odası: kapı ile kristal arasında 2×3 diken tuzağı (tuzak odasıyla aynı sınıflar).
+        /// Tuzaklar odanın tüm genişliğini kapladığından içlerinden geçmek gerekir; yakalanan oyuncu
+        /// ya da Lumi oda kapısına geri döner. Bu alan tuzak odasınınkinden ayrıdır ve ctx'e konmaz.
+        /// </summary>
+        private static void BuildSpikeRoom(SceneBuildContext ctx, Transform room)
+        {
+            Transform resetPoint = new GameObject("SpikeRoomResetPoint").transform;
+            resetPoint.SetParent(room, false);
+            resetPoint.localPosition = new Vector3(9f, 0f, 36f);
+
+            var traps = new List<SpikeTrap>();
+            foreach (float x in new[] { 10.4f, 12f })
+            {
+                foreach (float z in new[] { 35f, 36.6f, 38.2f })
+                {
+                    traps.Add(EnvironmentSection.BuildSpikeTrap(ctx, room, new Vector3(x, 0f, z)));
+                }
+            }
+
+            room.gameObject.AddComponent<SpikeTrapField>().Configure(traps.ToArray(), resetPoint);
+            ctx.Torch("Torch_Spikes", room, new Vector3(13.8f, 2.4f, 34.3f));
         }
 
         /// <summary>Sütunlar ve alçak duvarlar. Aralıklar oyuncu ve Lumi için en az 2 m.</summary>
@@ -140,10 +164,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             // B: Sütun labirentinin en uç köşesi.
             crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(13.3f, 0f, 30.8f)));
 
-            foreach (Vector2 p in new[] { new Vector2(6.5f, 39f) })
-            {
-                crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(p.x, 0f, p.y)));
-            }
+            // C: Diken odasında, tuzak şeridinin arkasında.
+            crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(13.2f, 0f, 38.2f)));
 
             CrystalCounter counter = crystalsRoot.gameObject.AddComponent<CrystalCounter>();
             counter.Configure(crystals.ToArray(), crystals.Count, new MonoBehaviour[] { gate });

@@ -75,7 +75,7 @@ namespace Lumen.Tests
             var companion = Object.FindAnyObjectByType<CompanionController>();
             var mechanism = Object.FindAnyObjectByType<SwitchMechanism>();
             var player = Object.FindAnyObjectByType<PlayerController>();
-            Object.FindAnyObjectByType<SpikeTrapField>().Reseed(5);
+            TrapRoomField().Reseed(5);
             Time.timeScale = TimeScale;
 
             Assert.IsTrue(companion.CommandHelp(), "Şalter hedef olarak seçilmedi.");
@@ -101,7 +101,7 @@ namespace Lumen.Tests
 
             var companion = Object.FindAnyObjectByType<CompanionController>();
             var mechanism = Object.FindAnyObjectByType<SwitchMechanism>();
-            var field = Object.FindAnyObjectByType<SpikeTrapField>();
+            var field = TrapRoomField();
 
             field.Reseed(trial.Seed);
             companion.PlaceAt(trial.Start);
@@ -136,6 +136,12 @@ namespace Lumen.Tests
             }
 
             Time.timeScale = 1f;
+        }
+
+        // Ara bölgedeki diken odasının da bir SpikeTrapField'ı var; testler tuzak odasınınkini kullanır.
+        private static SpikeTrapField TrapRoomField()
+        {
+            return Object.FindObjectsByType<SpikeTrapField>(FindObjectsSortMode.None).First(f => f.name == "TrapRoom");
         }
 
         private static IEnumerator LoadScene()

@@ -153,7 +153,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Torch("Torch_TrapRoom_B", room, new Vector3(-17.8f, 2.4f, 13f));
         }
 
-        private static SpikeTrap BuildSpikeTrap(SceneBuildContext ctx, Transform parent, Vector3 position)
+        /// <summary>1.6 m'lik diken tuzağı; kristal odalarındaki diken odası da bunu kullanır.</summary>
+        internal static SpikeTrap BuildSpikeTrap(SceneBuildContext ctx, Transform parent, Vector3 position)
         {
             const float tile = 1.6f;
             var root = new GameObject("SpikeTrap") { layer = GameLayers.HazardIndex };
