@@ -15,6 +15,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     /// Yerleşim (X sağa, Z ileri, birim metre):
     ///   Galeri  x[-8, 8]  z[24, 40]
     ///   Kapı    x[-1.5, 1.5] z=40  (ötesi bekçi bölgesi, Geliştirici 2)
+    ///   Kristal odaları (6×6 m, galerinin yan duvarlarından 2 m'lik kapılarla girilir):
+    ///     A Karanlık oda   x[-14, -8] z[33, 39]     kapı x=-8 z[34, 36]
+    ///     B Sütun labirenti x[8, 14]  z[26, 32]     kapı x=8  z[27, 29]
+    ///     C Diken odası     x[8, 14]  z[33.5, 39.5] kapı x=8  z[35, 37]
     ///
     /// Paylaşılanlar: LoreJournal (NPC okur), CrystalCounter, LoreInscription[].
     /// </summary>
@@ -23,6 +27,11 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         public const float DoorZ = 40f;
         public const float DoorHalfWidth = 1.5f;
         public const float DoorHeight = 3.2f;
+        public const float RoomDepth = 6f;
+
+        /// <summary>Dış duvarlardaki oda kapılarının z aralıkları; EnvironmentSection duvarı bunlara göre böler.</summary>
+        public static readonly Vector2[] WestRoomDoors = { new Vector2(34f, 36f) };
+        public static readonly Vector2[] EastRoomDoors = { new Vector2(27f, 29f), new Vector2(35f, 37f) };
 
         public int Order => 5;
 
@@ -31,11 +40,39 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform zone = new GameObject("MiddleZone").transform;
             zone.SetParent(ctx.Root("Level"), false);
 
+            BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f);
+            BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f);
+            BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f);
             BuildObstacles(ctx, zone);
             CrystalGate gate = BuildGate(ctx, zone);
             BuildCrystals(ctx, zone, gate);
             BuildInscriptions(ctx, zone);
             BuildLighting(ctx, zone);
+        }
+
+        /// <summary>
+        /// Galerinin dışındaki oda: zemin ve üç duvar (galeri tarafındaki duvar EnvironmentSection'da, kapı boşluğuyla).
+        /// Normal katmanda kalır ki NavMesh'e dahil olsun.
+        /// </summary>
+        private static Transform BuildRoomShell(SceneBuildContext ctx, Transform zone, string name, bool east, float zMin, float zMax)
+        {
+            Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
+            Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
+            Transform room = new GameObject(name).transform;
+            room.SetParent(zone, false);
+
+            float side = east ? 1f : -1f;
+            float inner = 8f * side;
+            float outer = (8f + RoomDepth) * side;
+            float zCenter = (zMin + zMax) * 0.5f;
+            float wallY = EnvironmentSection.WallHeight * 0.5f;
+
+            ctx.Box("Floor", room, new Vector3((inner + outer + 0.5f * side) * 0.5f, -0.25f, zCenter), new Vector3(RoomDepth + 0.5f, 0.5f, zMax - zMin + 0.5f), floor);
+            ctx.Box("Wall_Outer", room, new Vector3(outer + 0.25f * side, wallY, zCenter), new Vector3(0.5f, EnvironmentSection.WallHeight, zMax - zMin + 0.5f), stone);
+            float sideWallX = (inner + 0.5f * side + outer + 0.5f * side) * 0.5f;
+            ctx.Box("Wall_South", room, new Vector3(sideWallX, wallY, zMin), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+            ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+            return room;
         }
 
         /// <summary>Sütunlar ve alçak duvarlar. Aralıklar oyuncu ve Lumi için en az 2 m.</summary>
@@ -63,8 +100,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             }
 
             ctx.Box("LowWall_Left", obstacles, new Vector3(-5.5f, 0.6f, 32f), new Vector3(4f, 1.2f, 0.5f), stone);
-            ctx.Box("LowWall_Right", obstacles, new Vector3(5.5f, 0.6f, 27.5f), new Vector3(4f, 1.2f, 0.5f), stone);
-            ctx.Box("LowWall_Back", obstacles, new Vector3(5f, 0.6f, 37.5f), new Vector3(5f, 1.2f, 0.5f), stone);
+            // Sağdaki alçak duvarlar oda kapılarının önünde 2 m boşluk bırakacak kadar kısa.
+            ctx.Box("LowWall_Right", obstacles, new Vector3(4.5f, 0.6f, 27.5f), new Vector3(3f, 1.2f, 0.5f), stone);
+            ctx.Box("LowWall_Back", obstacles, new Vector3(4.25f, 0.6f, 37.5f), new Vector3(3.5f, 1.2f, 0.5f), stone);
         }
 
         /// <summary>
@@ -213,7 +251,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             lights.SetParent(zone, false);
             ctx.Torch("Torch_Gallery_A", lights, new Vector3(7.8f, 2.4f, 29.5f));
             ctx.Torch("Torch_Gallery_Dead_A", lights, new Vector3(-7.8f, 2.4f, 31.5f), false);
-            ctx.Torch("Torch_Gallery_Dead_B", lights, new Vector3(7.8f, 2.4f, 35.5f), false);
+            ctx.Torch("Torch_Gallery_Dead_B", lights, new Vector3(7.8f, 2.4f, 33.8f), false);
             ctx.Torch("Torch_Gate_L", lights, new Vector3(-2.2f, 2.6f, DoorZ - 0.45f));
             ctx.Torch("Torch_Gate_R", lights, new Vector3(2.2f, 2.6f, DoorZ - 0.45f));
         }
