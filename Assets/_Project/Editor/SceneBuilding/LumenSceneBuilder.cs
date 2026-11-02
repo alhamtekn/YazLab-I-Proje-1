@@ -48,6 +48,7 @@ namespace Lumen.EditorTools.SceneBuilding
             SceneBuildContext.EnsureFolder(SceneFolder);
             SceneBuildContext.EnsureFolder(SceneBuildContext.MaterialFolder);
             SceneBuildContext.EnsureFolder(SceneBuildContext.PrefabFolder);
+            MainMenuBuilder.Build(); // önce ana menü; sonra oyun sahnesi kurulur ve açık kalır
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             var context = new SceneBuildContext();
@@ -64,7 +65,12 @@ namespace Lumen.EditorTools.SceneBuilding
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
 
-            EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
+            // Build'de ilk sahne ana menü: oyun açılınca menü gelir, "Oyna" Lumen'i yükler
+            EditorBuildSettings.scenes = new[]
+            {
+                new EditorBuildSettingsScene(MainMenuBuilder.ScenePath, true),
+                new EditorBuildSettingsScene(ScenePath, true)
+            };
             AssetDatabase.SaveAssets();
             Debug.Log("[LumenSceneBuilder] Sahne oluşturuldu: " + ScenePath);
         }

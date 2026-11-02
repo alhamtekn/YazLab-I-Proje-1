@@ -43,7 +43,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Set(controller);
         }
 
-        private static DefaultControls.Resources LoadUiResources()
+        internal static DefaultControls.Resources LoadUiResources()
         {
             return new DefaultControls.Resources
             {
@@ -54,7 +54,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             };
         }
 
-        private static GameObject CreateImage(string name, Transform parent, Color color)
+        internal static GameObject CreateImage(string name, Transform parent, Color color)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);
@@ -62,7 +62,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             return go;
         }
 
-        private static void Stretch(RectTransform rect)
+        internal static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;
             rect.anchorMax = Vector2.one;
@@ -79,7 +79,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             rect.sizeDelta = new Vector2(width, height);
         }
 
-        private static Button CreateButton(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
+        internal static Button CreateButton(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
         {
             GameObject go = DefaultControls.CreateButton(resources);
             go.name = name;
@@ -93,7 +93,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             return go.GetComponent<Button>();
         }
 
-        private static Slider CreateLabeledSlider(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
+        internal static Slider CreateLabeledSlider(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
         {
             Transform row = CreateRow(ctx, parent, name, label, y);
             GameObject go = DefaultControls.CreateSlider(resources);
@@ -108,7 +108,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             return go.GetComponent<Slider>();
         }
 
-        private static Toggle CreateLabeledToggle(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
+        internal static Toggle CreateLabeledToggle(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, string name, string label, float y)
         {
             Transform row = CreateRow(ctx, parent, name, label, y);
             GameObject go = DefaultControls.CreateToggle(resources);
