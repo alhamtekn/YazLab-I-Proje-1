@@ -41,7 +41,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             zone.SetParent(ctx.Root("Level"), false);
 
             BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f);
-            BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f);
+            BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f));
             BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f);
             BuildObstacles(ctx, zone);
             CrystalGate gate = BuildGate(ctx, zone);
@@ -73,6 +73,23 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_South", room, new Vector3(sideWallX, wallY, zMin), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
             ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
             return room;
+        }
+
+        /// <summary>
+        /// B odası: iki iç duvar ve iki sütunla yılan biçimli yol. Kapıdan kuzeye, ilk duvarın ucundan doğuya,
+        /// güneye inip ikinci duvarın altından geçilir; kristal doğu koridorunun kuzey ucunda.
+        /// Koridorlar 1.45–1.95 m (oyuncu yarıçapı 0.35, Lumi 0.3).
+        /// </summary>
+        private static void BuildMaze(SceneBuildContext ctx, Transform room)
+        {
+            Material stone = ctx.Mat("PillarStone", new Color(0.33f, 0.31f, 0.3f));
+            float h = EnvironmentSection.WallHeight;
+
+            ctx.Box("MazeWall_1", room, new Vector3(10.6f, h * 0.5f, 28.125f), new Vector3(0.3f, h, 3.75f), stone);
+            ctx.Box("MazeWall_2", room, new Vector3(12.4f, h * 0.5f, 29.875f), new Vector3(0.3f, h, 3.75f), stone);
+            ctx.Box("MazePillar_1", room, new Vector3(9.1f, h * 0.5f, 31.2f), new Vector3(0.5f, h, 0.5f), stone);
+            ctx.Box("MazePillar_2", room, new Vector3(13.5f, h * 0.5f, 26.8f), new Vector3(0.5f, h, 0.5f), stone);
+            ctx.Torch("Torch_Maze", room, new Vector3(13.8f, 2.4f, 28.5f));
         }
 
         /// <summary>Sütunlar ve alçak duvarlar. Aralıklar oyuncu ve Lumi için en az 2 m.</summary>
@@ -120,7 +137,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
                 BuildCrystal(ctx, crystalsRoot, new Vector3(-12f, 0f, 37f), dark: true),
             };
 
-            foreach (Vector2 p in new[] { new Vector2(6.5f, 25.8f), new Vector2(6.5f, 39f) })
+            // B: Sütun labirentinin en uç köşesi.
+            crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(13.3f, 0f, 30.8f)));
+
+            foreach (Vector2 p in new[] { new Vector2(6.5f, 39f) })
             {
                 crystals.Add(BuildCrystal(ctx, crystalsRoot, new Vector3(p.x, 0f, p.y)));
             }
