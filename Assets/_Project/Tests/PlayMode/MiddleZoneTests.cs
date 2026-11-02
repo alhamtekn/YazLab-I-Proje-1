@@ -4,6 +4,7 @@ using Lumen.Level;
 using Lumen.Player;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -62,6 +63,25 @@ namespace Lumen.Tests
 
             crystal.Collect();
             Assert.AreEqual(1, counter.Collected, "Aynı kristal iki kez sayılmamalı.");
+        }
+
+        [UnityTest]
+        public IEnumerator EveryCrystalRoom_IsReachableOnNavMesh()
+        {
+            yield return LoadScene();
+            Vector3 galleryCenter = new Vector3(0f, 0f, 32f);
+            Assert.IsTrue(NavMesh.SamplePosition(galleryCenter, out NavMeshHit start, 1f, NavMesh.AllAreas), "Galeri NavMesh üzerinde değil.");
+
+            foreach (CrystalPickup crystal in Object.FindObjectsByType<CrystalPickup>(FindObjectsSortMode.None))
+            {
+                Assert.IsTrue(NavMesh.SamplePosition(crystal.transform.position, out NavMeshHit end, 1f, NavMesh.AllAreas),
+                    $"{crystal.transform.position} kristali NavMesh üzerinde değil.");
+
+                var path = new NavMeshPath();
+                NavMesh.CalculatePath(start.position, end.position, NavMesh.AllAreas, path);
+                Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
+                    $"Lumi galeriden {crystal.transform.position} kristaline yol bulamadı (oda kapısı ya da labirent kapalı olabilir).");
+            }
         }
 
         [UnityTest]
