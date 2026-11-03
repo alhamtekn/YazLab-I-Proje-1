@@ -202,6 +202,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         private static void BuildChasmAndBridge(SceneBuildContext ctx, Transform level)
         {
             Material wood = ctx.Mat("Wood", new Color(0.3f, 0.18f, 0.1f));
+            Material bridgeWood = ctx.Mat("BridgeWood", new Color(0.3f, 0.18f, 0.1f)); // TempleTextures: eski kalaslar + metal kuşak
             Material metal = ctx.Mat("Metal", new Color(0.32f, 0.32f, 0.36f), null, 0.8f, 0.45f);
             Transform chasm = new GameObject("ChasmAndBridge").transform;
             chasm.SetParent(level, false);
@@ -210,9 +211,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform pivot = new GameObject("BridgePivot").transform;
             pivot.SetParent(chasm, false);
             pivot.localPosition = new Vector3(0f, 0f, 24f);
-            ctx.Box("Deck", pivot, new Vector3(0f, -0.15f, -4f), new Vector3(3f, 0.3f, 8f), wood);
-            ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), wood);
-            ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), wood);
+            ctx.Box("Deck", pivot, new Vector3(0f, -0.15f, -4f), new Vector3(3f, 0.3f, 8f), bridgeWood);
+            ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
+            ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
 
             ctx.InvisibleWall("EdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
             ctx.InvisibleWall("EdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
