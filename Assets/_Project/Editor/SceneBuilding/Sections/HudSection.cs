@@ -22,7 +22,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Set(canvas);
 
             Text controls = CreateText(ctx, canvas.transform, "Controls", new Vector2(0f, 1f), new Vector2(24f, -24f), new Vector2(560f, 140f), 22, TextAnchor.UpperLeft);
-            controls.text = "WASD: Hareket   Fare: Kamera\nF: Lumi'den yardım iste   G: Lumi beni takip etsin\nE: Etkileşim   Esc: Menü";
+            controls.text = "F: Lumi'den yardım iste"; // diğer tuşlar menüdeki "Tuşlar" panelinde (ControlsPanel)
             controls.color = new Color(1f, 1f, 1f, 0.75f);
 
             Text state = CreateText(ctx, canvas.transform, "CompanionState", new Vector2(1f, 1f), new Vector2(-24f, -24f), new Vector2(520f, 40f), 24, TextAnchor.UpperRight);
