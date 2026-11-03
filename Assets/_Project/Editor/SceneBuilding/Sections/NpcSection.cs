@@ -90,7 +90,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Material heartMat = ctx.Mat("TempleHeart", new Color(1f, 0.9f, 0.6f), new Color(3f, 2.4f, 1.2f), 0.1f, 0.9f);
             var heart = new GameObject("TempleHeart");
             heart.transform.SetParent(zone, false);
-            heart.transform.localPosition = new Vector3(0f, 0f, 55.5f);
+            heart.transform.localPosition = new Vector3(0f, 0f, SanctumSection.HeartZ); // iki sınavın ardında, en sonda
 
             ctx.Primitive(PrimitiveType.Cylinder, "Pedestal", heart.transform, new Vector3(0f, 0.4f, 0f), new Vector3(1f, 0.4f, 1f), ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f)));
             ctx.Primitive(PrimitiveType.Sphere, "Crystal", heart.transform, new Vector3(0f, 1.4f, 0f), new Vector3(0.6f, 0.9f, 0.6f), heartMat);

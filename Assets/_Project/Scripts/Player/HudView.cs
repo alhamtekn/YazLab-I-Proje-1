@@ -45,6 +45,13 @@ namespace Lumen.Player
             feedbackTimer = feedbackDuration;
         }
 
+        /// <summary>Uzun ipuçları için: mesaj verilen süre kadar ekranda kalır.</summary>
+        public void ShowFeedback(string message, float seconds)
+        {
+            feedbackText.text = message;
+            feedbackTimer = seconds;
+        }
+
         private void Awake()
         {
             receiver = companion as ICompanionCommandReceiver;

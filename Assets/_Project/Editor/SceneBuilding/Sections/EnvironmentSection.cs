@@ -61,7 +61,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_TrapRoom_Left", shell, new Vector3(-18.25f, wallCenterY, 8f), new Vector3(0.5f, wallSizeY, 16f), stone);
             ctx.Box("Wall_TrapRoom_Front", shell, new Vector3(-13.25f, wallCenterY, 16.25f), new Vector3(10.5f, wallSizeY, 0.5f), stone);
             WallWithOpenings(ctx, shell, "Wall_Left_Far", -8.25f, 16f, 58.5f, MiddleZoneSection.WestRoomDoors, stone);
-            ctx.Box("Wall_End", shell, new Vector3(0f, wallCenterY, 58.25f), new Vector3(17f, wallSizeY, 0.5f), stone);
+            // Arka duvarda kutsal bölüme (SanctumSection) açılan geçit: x[-1.5, 1.5]
+            ctx.Box("Wall_End_L", shell, new Vector3(-5f, wallCenterY, 58.25f), new Vector3(7f, wallSizeY, 0.5f), stone);
+            ctx.Box("Wall_End_R", shell, new Vector3(5f, wallCenterY, 58.25f), new Vector3(7f, wallSizeY, 0.5f), stone);
+            ctx.Box("Wall_End_Lintel", shell, new Vector3(0f, (MiddleZoneSection.DoorHeight + WallHeight) * 0.5f, 58.25f), new Vector3(3f, WallHeight - MiddleZoneSection.DoorHeight, 0.5f), stone);
 
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
