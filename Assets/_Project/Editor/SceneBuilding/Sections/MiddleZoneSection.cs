@@ -28,6 +28,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         public const float DoorHalfWidth = 1.5f;
         public const float DoorHeight = 3.2f;
         public const float RoomDepth = 6f;
+        private const int DarkRoomCells = 5;
+        private const float DarkRoomCellSize = 1.1f;
 
         /// <summary>Dış duvarlardaki oda kapılarının z aralıkları; EnvironmentSection duvarı bunlara göre böler.</summary>
         public static readonly Vector2[] WestRoomDoors = { new Vector2(34f, 36f) };
@@ -40,7 +42,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform zone = new GameObject("MiddleZone").transform;
             zone.SetParent(ctx.Root("Level"), false);
 
-            BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f);
+            BuildDarkRoom(ctx, BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f, withFloor: false));
             BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f));
             BuildSpikeRoom(ctx, BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f));
             BuildObstacles(ctx, zone);
@@ -54,7 +56,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         /// Galerinin dışındaki oda: zemin ve üç duvar (galeri tarafındaki duvar EnvironmentSection'da, kapı boşluğuyla).
         /// Normal katmanda kalır ki NavMesh'e dahil olsun.
         /// </summary>
-        private static Transform BuildRoomShell(SceneBuildContext ctx, Transform zone, string name, bool east, float zMin, float zMax)
+        private static Transform BuildRoomShell(SceneBuildContext ctx, Transform zone, string name, bool east, float zMin, float zMax,
+            bool withFloor = true)
         {
             Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
             Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
@@ -67,12 +70,73 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             float zCenter = (zMin + zMax) * 0.5f;
             float wallY = EnvironmentSection.WallHeight * 0.5f;
 
-            ctx.Box("Floor", room, new Vector3((inner + outer + 0.5f * side) * 0.5f, -0.25f, zCenter), new Vector3(RoomDepth + 0.5f, 0.5f, zMax - zMin + 0.5f), floor);
+            if (withFloor)
+            {
+                ctx.Box("Floor", room, new Vector3((inner + outer + 0.5f * side) * 0.5f, -0.25f, zCenter), new Vector3(RoomDepth + 0.5f, 0.5f, zMax - zMin + 0.5f), floor);
+            }
+
             ctx.Box("Wall_Outer", room, new Vector3(outer + 0.25f * side, wallY, zCenter), new Vector3(0.5f, EnvironmentSection.WallHeight, zMax - zMin + 0.5f), stone);
             float sideWallX = (inner + 0.5f * side + outer + 0.5f * side) * 0.5f;
             ctx.Box("Wall_South", room, new Vector3(sideWallX, wallY, zMin), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
             ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
             return room;
+        }
+
+        /// <summary>
+        /// A odası (karanlık oda): zemin 5×5 karodan oluşur, karoların bir kısmı yoktur (çukur). Oda zifiri karanlıktır;
+        /// kristale giden güvenli karolar yalnızca NavMesh'te vardır. F ile Lumi işarete (CompanionBeacon) gönderilir,
+        /// güvenli yoldan gider ve ışığıyla yolu gösterir; oyuncu onu izler. Çukura düşen odanın girişine döner.
+        ///
+        /// Karo (i, j): i galeriden batıya, j güneyden kuzeye. Güvenli yol: giriş (0,1)-(0,2) → (1,2) → (1,3) → (1,4)
+        /// → (2,4) → (3,4) işaret → (3,3) kristal. (2,2)-(2,1)-(3,1) çıkmaz sokak.
+        /// </summary>
+        private static void BuildDarkRoom(SceneBuildContext ctx, Transform room)
+        {
+            Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
+            var safe = new HashSet<Vector2Int>
+            {
+                new Vector2Int(0, 1), new Vector2Int(0, 2), new Vector2Int(1, 2), new Vector2Int(1, 3), new Vector2Int(1, 4),
+                new Vector2Int(2, 4), new Vector2Int(3, 4), new Vector2Int(3, 3),
+                new Vector2Int(2, 2), new Vector2Int(2, 1), new Vector2Int(3, 1),
+            };
+
+            for (int i = 0; i < DarkRoomCells; i++)
+            {
+                for (int j = 0; j < DarkRoomCells; j++)
+                {
+                    if (safe.Contains(new Vector2Int(i, j)))
+                    {
+                        ctx.Box($"Tile_{i}_{j}", room, DarkRoomCell(i, j) + Vector3.down * 0.25f, new Vector3(DarkRoomCellSize, 0.5f, DarkRoomCellSize), floor);
+                    }
+                }
+            }
+
+            // Kapı eşiği: duvarın altındaki boşluk.
+            ctx.Box("Threshold", room, new Vector3(-8.25f, -0.25f, 35f), new Vector3(0.5f, 0.5f, 2f), floor);
+
+            Transform resetPoint = new GameObject("DarkRoomResetPoint").transform;
+            resetPoint.SetParent(room, false);
+            resetPoint.localPosition = new Vector3(-7.4f, 0.05f, 35f);
+
+            float roomCenterX = -8.5f - DarkRoomCells * DarkRoomCellSize * 0.5f;
+            float roomCenterZ = 33.25f + DarkRoomCells * DarkRoomCellSize * 0.5f;
+            float roomSize = DarkRoomCells * DarkRoomCellSize;
+            ctx.Box("PitBottom", room, new Vector3(roomCenterX, -3f, roomCenterZ), new Vector3(roomSize, 0.2f, roomSize), ctx.Mat("DarkStone", new Color(0.1f, 0.1f, 0.12f)), false);
+            GameObject fall = ctx.Box("FallZone", room, new Vector3(roomCenterX, -1.5f, roomCenterZ), new Vector3(roomSize, 1f, roomSize), null, true, 2);
+            fall.GetComponent<Collider>().isTrigger = true;
+            fall.AddComponent<FallZone>().Configure(resetPoint);
+
+            var beacon = new GameObject("Beacon");
+            beacon.transform.SetParent(room, false);
+            beacon.transform.position = DarkRoomCell(3, 4);
+            Light beaconLight = ctx.PointLight("BeaconLight", beacon.transform, new Vector3(0f, 1.5f, -0.6f), new Color(0.55f, 0.85f, 1f), 2f, 0.15f);
+            beacon.AddComponent<CompanionBeacon>().Configure(beacon.transform, beaconLight);
+        }
+
+        /// <summary>Karanlık odadaki (i, j) karosunun zemin hizasındaki merkezi.</summary>
+        private static Vector3 DarkRoomCell(int i, int j)
+        {
+            return new Vector3(-8.5f - DarkRoomCellSize * (i + 0.5f), 0f, 33.25f + DarkRoomCellSize * (j + 0.5f));
         }
 
         /// <summary>
@@ -158,7 +222,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             var crystals = new List<CrystalPickup>
             {
                 // A: Karanlık oda. Işığı neredeyse yok; ancak Lumi'nin ışığıyla görülür (G ile Lumi'yi çağır).
-                BuildCrystal(ctx, crystalsRoot, new Vector3(-12f, 0f, 37f), dark: true),
+                BuildCrystal(ctx, crystalsRoot, DarkRoomCell(3, 3), dark: true),
             };
 
             // B: Sütun labirentinin en uç köşesi.
