@@ -69,6 +69,14 @@ namespace Lumen.Tests
         public IEnumerator EveryCrystalRoom_IsReachableOnNavMesh()
         {
             yield return LoadScene();
+
+            // Labirentin kapıları Lumi'nin şalterleriyle açılır; yol denetiminden önce açılır.
+            foreach (MazeGate gate in Object.FindObjectsByType<MazeGate>(FindObjectsSortMode.None))
+            {
+                gate.Activate();
+            }
+
+            yield return new WaitForSeconds(1.5f);
             Vector3 galleryCenter = new Vector3(0f, 0f, 32f);
             Assert.IsTrue(NavMesh.SamplePosition(galleryCenter, out NavMeshHit start, 1f, NavMesh.AllAreas), "Galeri NavMesh üzerinde değil.");
 
