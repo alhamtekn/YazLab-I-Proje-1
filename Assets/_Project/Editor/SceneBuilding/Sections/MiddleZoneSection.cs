@@ -28,6 +28,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         public const float DoorHalfWidth = 1.5f;
         public const float DoorHeight = 3.2f;
         public const float RoomDepth = 6f;
+        private const float CrawlHeight = 1.1f;
+        private static readonly Vector2[] MazeCrawls = { new Vector2(9f, 10f), new Vector2(11f, 12f) };
         private const int DarkRoomCells = 5;
         private const float DarkRoomCellSize = 1.1f;
 
@@ -43,7 +45,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             zone.SetParent(ctx.Root("Level"), false);
 
             BuildDarkRoom(ctx, BuildRoomShell(ctx, zone, "Room_A_Dark", false, 33f, 39f, withFloor: false));
-            BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f));
+            BuildMaze(ctx, BuildRoomShell(ctx, zone, "Room_B_Maze", true, 26f, 32f, northCrawls: MazeCrawls));
             BuildSpikeRoom(ctx, BuildRoomShell(ctx, zone, "Room_C_Spikes", true, 33.5f, 39.5f));
             BuildObstacles(ctx, zone);
             CrystalGate gate = BuildGate(ctx, zone);
@@ -57,7 +59,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         /// Normal katmanda kalır ki NavMesh'e dahil olsun.
         /// </summary>
         private static Transform BuildRoomShell(SceneBuildContext ctx, Transform zone, string name, bool east, float zMin, float zMax,
-            bool withFloor = true)
+            bool withFloor = true, Vector2[] northCrawls = null)
         {
             Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
             Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
@@ -78,7 +80,24 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_Outer", room, new Vector3(outer + 0.25f * side, wallY, zCenter), new Vector3(0.5f, EnvironmentSection.WallHeight, zMax - zMin + 0.5f), stone);
             float sideWallX = (inner + 0.5f * side + outer + 0.5f * side) * 0.5f;
             ctx.Box("Wall_South", room, new Vector3(sideWallX, wallY, zMin), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
-            ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+            if (northCrawls == null)
+            {
+                ctx.Box("Wall_North", room, new Vector3(sideWallX, wallY, zMax), new Vector3(RoomDepth, EnvironmentSection.WallHeight, 0.5f), stone);
+                return room;
+            }
+
+            // Kuzey duvarında yalnızca Lumi'nin sığdığı alçak geçitler (x aralıkları, doğu odası için).
+            float x = inner + 0.5f * side;
+            float wallEnd = outer + 0.5f * side;
+            float h = EnvironmentSection.WallHeight;
+            foreach (Vector2 crawl in northCrawls)
+            {
+                ctx.Box("Wall_North", room, new Vector3((x + crawl.x) * 0.5f, wallY, zMax), new Vector3(crawl.x - x, h, 0.5f), stone);
+                ctx.Box("CrawlLintel", room, new Vector3((crawl.x + crawl.y) * 0.5f, (CrawlHeight + h) * 0.5f, zMax), new Vector3(crawl.y - crawl.x, h - CrawlHeight, 0.5f), stone);
+                x = crawl.y;
+            }
+
+            ctx.Box("Wall_North", room, new Vector3((x + wallEnd) * 0.5f, wallY, zMax), new Vector3(wallEnd - x, h, 0.5f), stone);
             return room;
         }
 
@@ -140,20 +159,61 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         }
 
         /// <summary>
-        /// B odası: iki iç duvar ve iki sütunla yılan biçimli yol. Kapıdan kuzeye, ilk duvarın ucundan doğuya,
-        /// güneye inip ikinci duvarın altından geçilir; kristal doğu koridorunun kuzey ucunda.
-        /// Koridorlar 1.45–1.95 m (oyuncu yarıçapı 0.35, Lumi 0.3).
+        /// B odası (sütun labirenti): iki iç duvar yılan biçimli bir yol çizer; duvarların uçlarındaki geçitler
+        /// kapılarla kapalıdır. Her kapı, kuzey duvardaki alçak geçidin (1.1 m, yalnızca Lumi sığar) ardındaki
+        /// nişte bir şalterle açılır. F ile Lumi en yakın kapalı kapının şalterine gider.
+        ///   Kapı 1: batı koridorundan orta koridora (kalıcı), şalteri batı nişinde.
+        ///   Kapı 2: orta koridordan doğu koridoruna, 15 sn açık kalır; şalteri orta koridorun nişinde.
+        /// Kristal doğu koridorunun kuzey ucunda.
         /// </summary>
         private static void BuildMaze(SceneBuildContext ctx, Transform room)
         {
             Material stone = ctx.Mat("PillarStone", new Color(0.33f, 0.31f, 0.3f));
+            Material floor = ctx.Mat("Floor", new Color(0.22f, 0.2f, 0.19f));
+            Material gateMat = ctx.Mat("GateDoor", new Color(0.2f, 0.22f, 0.26f), null, 0.6f, 0.4f);
             float h = EnvironmentSection.WallHeight;
 
             ctx.Box("MazeWall_1", room, new Vector3(10.6f, h * 0.5f, 28.125f), new Vector3(0.3f, h, 3.75f), stone);
             ctx.Box("MazeWall_2", room, new Vector3(12.4f, h * 0.5f, 29.875f), new Vector3(0.3f, h, 3.75f), stone);
-            ctx.Box("MazePillar_1", room, new Vector3(9.1f, h * 0.5f, 31.2f), new Vector3(0.5f, h, 0.5f), stone);
-            ctx.Box("MazePillar_2", room, new Vector3(13.5f, h * 0.5f, 26.8f), new Vector3(0.5f, h, 0.5f), stone);
+            ctx.Box("MazePillar", room, new Vector3(13.5f, h * 0.5f, 26.8f), new Vector3(0.5f, h, 0.5f), stone);
             ctx.Torch("Torch_Maze", room, new Vector3(13.8f, 2.4f, 28.5f));
+
+            MazeGate gate1 = BuildMazeGate(ctx, room, "MazeGate_1", new Vector3(10.6f, 0f, 30.875f), 0f, gateMat);
+            MazeGate gate2 = BuildMazeGate(ctx, room, "MazeGate_2", new Vector3(12.4f, 0f, 27.125f), 15f, gateMat);
+
+            // Nişler: B'nin kuzey duvarı ile C'nin güney duvarı arasındaki 1 m'lik şerit, ara duvarla ikiye bölünür.
+            ctx.Box("NicheFloor", room, new Vector3(10.4f, -0.25f, 32.75f), new Vector3(3.8f, 0.5f, 1f), floor);
+            ctx.Box("NicheDivider", room, new Vector3(10.45f, h * 0.5f, 32.75f), new Vector3(0.3f, h, 1f), stone);
+            ctx.Box("NicheEnd", room, new Vector3(12.45f, h * 0.5f, 32.75f), new Vector3(0.3f, h, 1f), stone);
+
+            BuildCompanionLever(ctx, room, "MazeLever_1", new Vector3(9.5f, 0f, 32.75f), gate1);
+            BuildCompanionLever(ctx, room, "MazeLever_2", new Vector3(11.5f, 0f, 32.75f), gate2);
+        }
+
+        private static MazeGate BuildMazeGate(SceneBuildContext ctx, Transform room, string name, Vector3 position, float openSeconds, Material material)
+        {
+            float h = EnvironmentSection.WallHeight;
+            Transform root = new GameObject(name).transform;
+            root.SetParent(room, false);
+            root.localPosition = position;
+            GameObject door = ctx.Box("Door", root, new Vector3(0f, h * 0.5f, 0f), new Vector3(0.25f, h, 1.75f), material, true, 2);
+            NavMeshObstacle obstacle = door.AddComponent<NavMeshObstacle>();
+            obstacle.shape = NavMeshObstacleShape.Box;
+            obstacle.carving = true;
+
+            MazeGate gate = root.gameObject.AddComponent<MazeGate>();
+            gate.Configure(door.transform, openSeconds);
+            return gate;
+        }
+
+        private static void BuildCompanionLever(SceneBuildContext ctx, Transform room, string name, Vector3 approach, MazeGate gate)
+        {
+            Transform root = new GameObject(name).transform;
+            root.SetParent(room, false);
+            root.localPosition = approach;
+            ctx.Box("Base", root, new Vector3(0f, 0.3f, 0.35f), new Vector3(0.5f, 0.6f, 0.2f), ctx.Mat("Metal", new Color(0.32f, 0.32f, 0.36f), null, 0.8f, 0.45f), false);
+            Light indicator = ctx.PointLight("Indicator", root, new Vector3(0f, 0.9f, 0f), new Color(1f, 0.2f, 0.15f), 2.5f, 1.2f);
+            root.gameObject.AddComponent<CompanionLever>().Configure(root, gate, indicator);
         }
 
         /// <summary>
