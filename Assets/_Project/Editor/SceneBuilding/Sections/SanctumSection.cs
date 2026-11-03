@@ -1,4 +1,5 @@
 using Lumen.Companion;
+using Lumen.Core;
 using Lumen.Level;
 using Lumen.Player;
 using Lumen.Sanctum;
@@ -67,7 +68,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             float floorStart = StartZ - 0.5f;
             ctx.Box("Floor_Seal", zone, new Vector3(0f, -0.25f, (floorStart + ChasmStartZ) * 0.5f), new Vector3(16f, 0.5f, ChasmStartZ - floorStart), floor);
             ctx.Box("Floor_Heart", zone, new Vector3(0f, -0.25f, (ChasmEndZ + EndZ) * 0.5f), new Vector3(16f, 0.5f, EndZ - ChasmEndZ), floor);
-            ctx.Box("Floor_Chasm", zone, new Vector3(0f, EnvironmentSection.PitDepth, (ChasmStartZ + ChasmEndZ) * 0.5f), new Vector3(16f, 0.5f, ChasmEndZ - ChasmStartZ), ctx.Mat("DarkStone", new Color(0.1f, 0.1f, 0.12f)));
+            BuildLava(ctx, zone);
 
             // Batı duvarı tek parça; doğu duvarında Lumi girintisine açılan alçak geçit z[62.5, 64.5]
             ctx.Box("Wall_West", zone, new Vector3(-8.25f, wallY, (StartZ + EndZ) * 0.5f), new Vector3(0.5f, wallH, EndZ - StartZ), stone);
@@ -82,10 +83,35 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Alcove_South", zone, new Vector3(9.75f, 2f, 62.25f), new Vector3(3.5f, 4f, 0.5f), stone);
             ctx.Box("Alcove_North", zone, new Vector3(9.75f, 2f, 64.75f), new Vector3(3.5f, 4f, 0.5f), stone);
 
+            BuildCeiling(ctx, zone);
+
             // Uçuruma düşen kontrol noktasına döner
             GameObject killZone = ctx.Box("KillZone", zone, new Vector3(0f, -4f, (ChasmStartZ + ChasmEndZ) * 0.5f), new Vector3(16f, 1f, ChasmEndZ - ChasmStartZ), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
             killZone.AddComponent<KillZone>();
+        }
+
+        // Uçurumun dibi: parlayan lav ve aşağıdan duvarları aydınlatan turuncu ışıklar (uçurum boş görünmesin).
+        // Malzeme adı "Lava": ilk uçurumda da aynı malzeme kullanılır, doku verilirse ikisi birden değişir.
+        private static void BuildLava(SceneBuildContext ctx, Transform zone)
+        {
+            Material lava = ctx.Mat("Lava", new Color(1f, 0.35f, 0.05f), new Color(2.6f, 0.7f, 0.08f), 0f, 0.6f);
+            float zCenter = (ChasmStartZ + ChasmEndZ) * 0.5f;
+            ctx.Box("Lava", zone, new Vector3(0f, EnvironmentSection.PitDepth, zCenter), new Vector3(16f, 0.5f, ChasmEndZ - ChasmStartZ), lava, false, 2);
+            for (float z = ChasmStartZ + 2f; z < ChasmEndZ; z += 4f)
+            {
+                ctx.PointLight("LavaGlow", zone, new Vector3(0f, EnvironmentSection.PitDepth + 2f, z), new Color(1f, 0.45f, 0.1f), 10f, 1.6f);
+            }
+        }
+
+        // Tavan: y = 4 üstünde, "Ceiling" katmanında ve çarpıştırıcısız. Bu katman NavMesh'e girmez, mini harita onu çizmez.
+        private static void BuildCeiling(SceneBuildContext ctx, Transform zone)
+        {
+            Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
+            int layer = GameLayers.CeilingIndex;
+            float y = EnvironmentSection.WallHeight + 0.25f;
+            ctx.Box("Ceiling", zone, new Vector3(0f, y, (StartZ - 0.5f + EndZ + 0.5f) * 0.5f), new Vector3(17f, 0.5f, EndZ - StartZ + 1f), stone, false, layer);
+            ctx.Box("Ceiling_Alcove", zone, new Vector3(9.75f, y, 63.5f), new Vector3(3.5f, 0.5f, 3f), stone, false, layer);
         }
 
         private static TwinSeal BuildTwinSeal(SceneBuildContext ctx, Transform zone, Transform player, HudView hud)
