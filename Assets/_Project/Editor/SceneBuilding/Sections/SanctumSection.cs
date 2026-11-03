@@ -25,7 +25,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         public const float BarrierZ = 70f;
         public const float ChasmStartZ = 74f;
         public const float ChasmEndZ = 86f;
-        private const float StartZ = 58.5f;
+        public const float StartZ = 58.5f;
         private const float EndZ = 98f;
         private const float CrawlHeight = 1.1f;   // Lumi (0.9 m) sığar, oyuncu (1.8 m) sığmaz
         private const float TileSize = 1.5f;

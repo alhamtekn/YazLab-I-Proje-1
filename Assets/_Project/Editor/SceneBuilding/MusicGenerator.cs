@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Lumen.EditorTools.SceneBuilding
 {
     /// <summary>
-    /// Geliştirici 2 — müziği dışarıdan indirmeden kodla üretir ve WAV olarak kaydeder (Assets/_Project/Audio).
+    /// Geliştirici 2 — müziği ve kısa ses efektlerini dışarıdan indirmeden kodla üretir ve WAV olarak kaydeder (Assets/_Project/Audio).
     /// Oyun: alçak, uyumsuz bir uğultu + yavaş kalp atışı + ara sıra metal çan (gerilim).
     /// Menü: daha sakin bir akor + daha sık çan.
     /// Tüm sesler döngü süresine tam oturur, böylece müzik takılmadan başa sarar.
@@ -20,20 +20,88 @@ namespace Lumen.EditorTools.SceneBuilding
         private const int SampleRate = 22050;
         private const float LoopSeconds = 40f;
 
-        public static AudioClip GameMusic() => Ensure(GamePath, false);
+        public static AudioClip GameMusic() => Ensure(GamePath, Game);
 
-        public static AudioClip MenuMusic() => Ensure(MenuPath, true);
+        public static AudioClip MenuMusic() => Ensure(MenuPath, Menu);
 
-        private static AudioClip Ensure(string path, bool menu)
+        /// <summary>Kutsal bölüm: daha hızlı kalp atışı ve daha yüksek, gergin bir uğultu (son sınavlar).</summary>
+        public static AudioClip SanctumMusic() => Ensure(AudioFolder + "/SanctumTension.wav", Sanctum);
+
+        // Kısa efektler (döngü değil): kristal/yazıt çanı, kapı açılma gümbürtüsü, Arven'in saldırı darbesi
+        public static AudioClip ChimeSfx() => Ensure(AudioFolder + "/Chime.wav", Chime);
+
+        public static AudioClip RumbleSfx() => Ensure(AudioFolder + "/Rumble.wav", Rumble);
+
+        public static AudioClip HitSfx() => Ensure(AudioFolder + "/Hit.wav", Hit);
+
+        private static AudioClip Ensure(string path, Func<float[]> generate)
         {
             if (!File.Exists(path))
             {
                 SceneBuildContext.EnsureFolder(AudioFolder);
-                WriteWav(path, menu ? Menu() : Game());
+                WriteWav(path, generate());
                 AssetDatabase.ImportAsset(path);
             }
 
             return AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+        }
+
+        private static float[] Sanctum()
+        {
+            var s = new float[(int)(SampleRate * LoopSeconds)];
+            // Re (73.4 Hz) ve yarım oktav üstü (triton, "şeytan aralığı"): çözülmeyen gerilim
+            Pad(s, new[] { 73.4f, 103.8f, 146.8f, 155.6f }, 0.2f, 8);
+            for (int i = 0; i < 40; i++) // 40 atış / 40 sn: kalp hızlanıyor
+            {
+                float t = i * LoopSeconds / 40f;
+                Thump(s, t, 0.55f);
+                Thump(s, t + 0.22f, 0.35f);
+            }
+
+            Bells(s, 12, 0.14f, new System.Random(23), 1100f);
+            return Normalize(s);
+        }
+
+        // Kristal çanı: üç kısmi tonlu, 2.5 sn'de sönen parlak ses
+        private static float[] Chime()
+        {
+            var s = new float[SampleRate * 3];
+            float[] partials = { 1f, 2.0f, 3.01f };
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = i / (float)SampleRate;
+                for (int p = 0; p < partials.Length; p++)
+                {
+                    s[i] += Mathf.Sin(2f * Mathf.PI * 1318.5f * partials[p] * t) * Mathf.Exp(-t * (1.8f + p * 1.5f)) / (p + 1);
+                }
+            }
+
+            return Normalize(s);
+        }
+
+        // Taş kapı: alçak, titreyen gümbürtü (1.8 sn), sonda yavaşça söner
+        private static float[] Rumble()
+        {
+            var s = new float[(int)(SampleRate * 1.8f)];
+            var random = new System.Random(5);
+            float noise = 0f;
+            for (int i = 0; i < s.Length; i++)
+            {
+                float t = i / (float)SampleRate;
+                noise = noise * 0.97f + ((float)random.NextDouble() * 2f - 1f) * 0.03f; // alçak geçiren gürültü: taş sürtünmesi
+                float envelope = Mathf.Clamp01(t * 6f) * Mathf.Clamp01((1.8f - t) * 1.5f);
+                s[i] = envelope * (noise * 6f + 0.5f * Mathf.Sin(2f * Mathf.PI * 42f * t));
+            }
+
+            return Normalize(s);
+        }
+
+        // Saldırı: tek, sert ve alçak darbe
+        private static float[] Hit()
+        {
+            var s = new float[SampleRate];
+            Thump(s, 0f, 1f);
+            return Normalize(s);
         }
 
         private static float[] Game()
