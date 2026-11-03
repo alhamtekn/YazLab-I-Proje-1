@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Lumen.EditorTools.SceneBuilding.Sections
 {
-    /// <summary>Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Ana Menü.</summary>
+    /// <summary>Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Tuşlar, Ana Menü.</summary>
     public sealed class PauseMenuSection : ISceneSection
     {
         private static readonly Color PanelColor = new Color(0.04f, 0.05f, 0.08f, 0.92f);
@@ -23,7 +23,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             GameObject panel = CreateImage("Panel", dim.transform, PanelColor);
             var panelRect = (RectTransform)panel.transform;
-            panelRect.sizeDelta = new Vector2(560f, 520f);
+            panelRect.sizeDelta = new Vector2(560f, 600f);
 
             Text title = HudSection.CreateText(ctx, panel.transform, "Title", new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(500f, 60f), 40, TextAnchor.MiddleCenter);
             title.text = "Duraklatıldı";
@@ -33,7 +33,8 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Slider volume = CreateLabeledSlider(ctx, resources, panel.transform, "Volume", "Ses", -200f);
             Slider brightness = CreateLabeledSlider(ctx, resources, panel.transform, "Brightness", "Işık", -270f);
             Toggle fullscreen = CreateLabeledToggle(ctx, resources, panel.transform, "Fullscreen", "Tam Ekran", -340f);
-            Button mainMenu = CreateButton(ctx, resources, panel.transform, "MainMenu", "Ana Menü", -420f);
+            Button keys = CreateButton(ctx, resources, panel.transform, "Keys", "Tuşlar", -420f);
+            Button mainMenu = CreateButton(ctx, resources, panel.transform, "MainMenu", "Ana Menü", -500f);
 
             Text status = HudSection.CreateText(ctx, panel.transform, "Status", new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(500f, 30f), 20, TextAnchor.MiddleCenter);
             status.color = new Color(1f, 0.75f, 0.45f);
@@ -41,6 +42,51 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             PauseMenuController controller = canvas.gameObject.AddComponent<PauseMenuController>();
             controller.Configure(dim, resume, volume, brightness, fullscreen, mainMenu, status);
             ctx.Set(controller);
+
+            // Tuşlar paneli duraklatma panelinin üstünde açılır; menü kapanınca o da kapanır
+            GameObject controls = CreateControlsPanel(ctx, resources, dim.transform, null, PanelColor, AccentColor, out Button back);
+            panel.AddComponent<ControlsPanel>().Configure(keys, controls, back);
+        }
+
+        /// <summary>
+        /// Tuşlar paneli (ana menü ve duraklatma menüsü ortak): solda tuşlar, sağda ne işe yaradıkları, altta Geri.
+        /// font null ise varsayılan yazı tipi kullanılır.
+        /// </summary>
+        internal static GameObject CreateControlsPanel(SceneBuildContext ctx, DefaultControls.Resources resources, Transform parent, Font font, Color background, Color accent, out Button back)
+        {
+            GameObject panel = CreateImage("ControlsPanel", parent, background);
+            ((RectTransform)panel.transform).sizeDelta = new Vector2(640f, 560f);
+            panel.AddComponent<Outline>().effectColor = new Color(accent.r, accent.g, accent.b, 0.7f);
+
+            Text title = HudSection.CreateText(ctx, panel.transform, "Title", new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(560f, 60f), 40, TextAnchor.MiddleCenter);
+            title.text = "Tuşlar";
+            title.color = accent;
+
+            var keyLines = new System.Text.StringBuilder();
+            var actionLines = new System.Text.StringBuilder();
+            foreach ((string key, string action) in ControlsPanel.Keys)
+            {
+                keyLines.AppendLine(key);
+                actionLines.AppendLine(action);
+            }
+
+            // İki sütun: tuşlar sağa, açıklamalar sola yaslı; satırlar aynı aralıkla hizalanır
+            Text keysText = HudSection.CreateText(ctx, panel.transform, "KeyColumn", new Vector2(0.5f, 1f), new Vector2(-190f, -100f), new Vector2(140f, 340f), 26, TextAnchor.UpperRight);
+            keysText.text = keyLines.ToString();
+            keysText.color = accent;
+            Text actionsText = HudSection.CreateText(ctx, panel.transform, "ActionColumn", new Vector2(0.5f, 1f), new Vector2(70f, -100f), new Vector2(360f, 340f), 26, TextAnchor.UpperLeft);
+            actionsText.text = actionLines.ToString();
+
+            back = CreateButton(ctx, resources, panel.transform, "Back", "Geri", -490f);
+            if (font != null)
+            {
+                foreach (Text text in panel.GetComponentsInChildren<Text>(true))
+                {
+                    text.font = font;
+                }
+            }
+
+            return panel;
         }
 
         internal static DefaultControls.Resources LoadUiResources()

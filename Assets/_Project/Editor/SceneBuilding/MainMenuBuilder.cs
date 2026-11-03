@@ -70,9 +70,10 @@ namespace Lumen.EditorTools.SceneBuilding
 
             Button play = TextButton(ctx, root, font, "Play", "Oyna", -470f);
             Button settings = TextButton(ctx, root, font, "Settings", "Ayarlar", -560f);
-            Button quit = TextButton(ctx, root, font, "Quit", "Çıkış", -650f);
+            Button keys = TextButton(ctx, root, font, "Keys", "Tuşlar", -650f);
+            Button quit = TextButton(ctx, root, font, "Quit", "Çıkış", -740f);
 
-            Text credits = Label(ctx, root, font, "Credits", new Vector2(150f, -800f), new Vector2(800f, 100f), 26, "Onur TOPBAŞ\nAli Hamza TEKİNBAŞ");
+            Text credits = Label(ctx, root, font, "Credits", new Vector2(150f, -870f), new Vector2(800f, 100f), 26, "Onur TOPBAŞ\nAli Hamza TEKİNBAŞ");
             credits.color = new Color(1f, 1f, 1f, 0.7f);
             credits.lineSpacing = 1.3f;
 
@@ -82,6 +83,8 @@ namespace Lumen.EditorTools.SceneBuilding
             footer.color = new Color(1f, 1f, 1f, 0.45f);
 
             GameObject panel = BuildSettingsPanel(ctx, root, font, out Slider volume, out Slider brightness, out Toggle fullscreen, out Button back);
+            GameObject controls = PauseMenuSection.CreateControlsPanel(ctx, PauseMenuSection.LoadUiResources(), root, font, new Color(0.02f, 0.02f, 0.03f, 0.96f), Gold, out Button controlsBack);
+            canvas.gameObject.AddComponent<ControlsPanel>().Configure(keys, controls, controlsBack);
 
             // En üstte siyah perde: menü bununla açılır, Oyna'ya basınca bununla kararır
             GameObject fade = PauseMenuSection.CreateImage("Fader", root, Color.black);
@@ -253,7 +256,7 @@ namespace Lumen.EditorTools.SceneBuilding
         }
 
         // Dokuyu ilk seferde (ya da boyutu değişince) üretip PNG olarak kaydeder, sonra sprite olarak yükler
-        private static Sprite EnsureSprite(string path, int size, Func<float, float, Color> pixel)
+        internal static Sprite EnsureSprite(string path, int size, Func<float, float, Color> pixel)
         {
             if (!File.Exists(path) || AssetDatabase.LoadAssetAtPath<Texture2D>(path).width != size)
             {
