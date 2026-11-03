@@ -117,9 +117,16 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             title.text = "Tapınağın kalbine ulaştın";
             title.color = new Color(1f, 0.88f, 0.6f);
             Text body = HudSection.CreateText(ctx, panel.transform, "Body", new Vector2(0.5f, 0.5f), new Vector2(0f, -40f), new Vector2(1200f, 100f), 28, TextAnchor.MiddleCenter);
-            body.text = "Lumen'in ilk ışığı yeniden yandı. Arven yeminini tamamladı.\n[Esc] Menü";
+            body.text = "Lumen'in ilk ışığı yeniden yandı. Arven yeminini tamamladı.";
 
-            canvas.gameObject.AddComponent<EndScreen>().Configure(panel, gameState);
+            Text stats = HudSection.CreateText(ctx, panel.transform, "Stats", new Vector2(0.5f, 0.5f), new Vector2(0f, -110f), new Vector2(1200f, 40f), 26, TextAnchor.MiddleCenter);
+            stats.color = new Color(0.85f, 0.92f, 1f);
+            Button mainMenu = PauseMenuSection.CreateButton(ctx, PauseMenuSection.LoadUiResources(), panel.transform, "MainMenu", "Ana Menü", 0f);
+            var menuRect = (RectTransform)mainMenu.transform;
+            menuRect.anchorMin = menuRect.anchorMax = new Vector2(0.5f, 0.5f);
+            menuRect.anchoredPosition = new Vector2(0f, -190f);
+
+            canvas.gameObject.AddComponent<EndScreen>().Configure(panel, gameState, stats, mainMenu);
         }
     }
 }
