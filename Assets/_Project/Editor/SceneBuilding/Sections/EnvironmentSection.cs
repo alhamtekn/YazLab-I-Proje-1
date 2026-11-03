@@ -69,12 +69,44 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_End_R", shell, new Vector3(5f, wallCenterY, 58.25f), new Vector3(7f, wallSizeY, 0.5f), stone);
             ctx.Box("Wall_End_Lintel", shell, new Vector3(0f, (MiddleZoneSection.DoorHeight + WallHeight) * 0.5f, 58.25f), new Vector3(3f, WallHeight - MiddleZoneSection.DoorHeight, 0.5f), stone);
 
+            BuildLavaPit(ctx, shell);
+
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
             killZone.AddComponent<KillZone>();
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
+        }
+
+        /// <summary>
+        /// Uçurumun dibi: parlayan lav yüzeyi, alttan duvarları aydınlatan turuncu ışıklar ve çukurun ön/arka
+        /// yan duvarları (zeminlerin altı boş görünmesin). Lav collider'sız ve Ignore Raycast katmanında,
+        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone ile kontrol noktasına döner.
+        /// "Lava" malzemesi kutsal bölümdeki uçurumda da kullanılır.
+        /// </summary>
+        private static void BuildLavaPit(SceneBuildContext ctx, Transform shell)
+        {
+            var lavaEmission = new Color(3f, 0.9f, 0.15f);
+            Material lava = ctx.Mat("Lava", new Color(1f, 0.35f, 0.05f), lavaEmission);
+            Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
+            Transform pit = new GameObject("LavaPit").transform;
+            pit.SetParent(shell, false);
+
+            float pitWallY = (PitDepth - 0.5f) * 0.5f;
+            float pitWallHeight = -0.5f - PitDepth;
+            ctx.Box("PitWall_Near", pit, new Vector3(0f, pitWallY, 15.75f), new Vector3(16f, pitWallHeight, 0.5f), stone, false);
+            ctx.Box("PitWall_Far", pit, new Vector3(0f, pitWallY, 24.25f), new Vector3(16f, pitWallHeight, 0.5f), stone, false);
+
+            GameObject surface = ctx.Box("LavaSurface", pit, new Vector3(0f, PitDepth + 0.35f, 20f), new Vector3(16f, 0.2f, 8f), lava, false, 2);
+
+            var lights = new Light[3];
+            for (int i = 0; i < lights.Length; i++)
+            {
+                lights[i] = ctx.PointLight($"LavaLight_{i}", pit, new Vector3(-5f + i * 5f, PitDepth + 2f, 20f), new Color(1f, 0.45f, 0.12f), 12f, 2.5f);
+            }
+
+            pit.gameObject.AddComponent<LavaGlow>().Configure(surface.GetComponent<Renderer>(), lights, lavaEmission);
         }
 
         /// <summary>

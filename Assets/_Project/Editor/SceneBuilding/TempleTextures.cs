@@ -41,6 +41,7 @@ namespace Lumen.EditorTools.SceneBuilding
             ["GateDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
             ["ArvenDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), Tint = new Color(1.1f, 0.95f, 0.8f), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
             // Köprü kalkıp indiği için doku nesneyle birlikte döner; kalaslar köprünün boyunca 0.5 m aralıklı.
+            ["Lava"] = new Theme { Main = () => Get("lava_crust", LavaCrust), Emission = () => Get("lava_glow", LavaGlowMap), Tint = new Color(1f, 0.5f, 0.2f), EmissionColor = new Color(3f, 0.9f, 0.15f), Tiling = 4f },
             ["BridgeWood"] = new Theme { Main = () => Get("bridge_planks", BridgePlanks), Tiling = 1f, ObjectSpace = true },
             // Hareket eden ya da tek parça nesneler nesne uzayında, nesne başına bir kez döşenir (Tiling = 1).
             ["LumiGlow"] = new Theme { Main = () => Get("lumi_panels", LumiPanels), Emission = () => Get("lumi_glow", LumiGlow), EmissionColor = new Color(1.2f, 1.35f, 1.6f), Tiling = 0.5f, ObjectSpace = true },
@@ -261,6 +262,39 @@ namespace Lumen.EditorTools.SceneBuilding
                     }
 
                     x += length + gap;
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lav kabuğu: koyu, soğumuş kayadan adacıklar; aralarında akan lav (ışıma katmanında).</summary>
+        private static Color[] LavaCrust()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float n = TileNoise(x, y, 12f, 61) * 0.7f + TileNoise(x, y, 4f, 62) * 0.3f;
+                    pixels[y * Size + x] = n > 0.52f ? new Color(0.12f, 0.07f, 0.05f) * (0.7f + n * 0.5f) : new Color(1f, 0.6f, 0.2f);
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lavın ışıması: kabuğun olmadığı yerlerde parlak, kabuk kenarlarında sönerek.</summary>
+        private static Color[] LavaGlowMap()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float n = TileNoise(x, y, 12f, 61) * 0.7f + TileNoise(x, y, 4f, 62) * 0.3f;
+                    float glow = Mathf.Clamp01((0.56f - n) / 0.12f);
+                    pixels[y * Size + x] = Color.white * glow;
                 }
             }
 
