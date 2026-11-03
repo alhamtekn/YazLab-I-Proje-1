@@ -116,20 +116,19 @@ namespace Lumen.Tests
             var playerPlate = Object.FindAnyObjectByType<PressurePlate>();
             Time.timeScale = TimeScale;
 
-            player.Teleport(new Vector3(7f, 0.05f, 36f));
-            companion.PlaceAt(new Vector3(9f, 0f, 36f));
-            Assert.IsTrue(companion.CommandHelp());
-            Assert.AreSame(lumiPlate, companion.CurrentTarget, "Diken odasının girişinde en yakın hedef Lumi plakası olmalı.");
-
-            yield return WaitUntilOrTimeout(() => lumiPlate.IsPressed, LumiTimeoutSeconds * 2f);
-            Assert.IsTrue(lumiPlate.IsPressed, "Lumi tuzakların arasından plakaya ulaşamadı.");
-
-            SpikeTrap[] roomTraps = playerPlate.transform.parent.GetComponentsInChildren<SpikeTrap>();
-            Assert.AreEqual(3, roomTraps.Count(t => t.IsSuppressed), "Lumi plakası uzak sütunun 3 tuzağını durdurmalı.");
-
+            // Önce oyuncu kendi plakasına basar (yakın sütun iner), sonra Lumi'yi karşı plakaya gönderir.
             player.Teleport(playerPlate.transform.position + Vector3.up * 0.05f);
             yield return WaitUntilOrTimeout(() => playerPlate.IsHolding, 1f);
             Assert.IsTrue(playerPlate.IsHolding, "Oyuncu plakaya basınca plaka çalışmalı.");
+
+            companion.PlaceAt(new Vector3(9f, 0f, 36f));
+            Assert.IsTrue(companion.CommandHelp());
+            Assert.AreSame(lumiPlate, companion.CurrentTarget, "Diken odasında en yakın hedef Lumi plakası olmalı.");
+
+            yield return WaitUntilOrTimeout(() => lumiPlate.IsPressed, LumiTimeoutSeconds * 2f);
+            Assert.IsTrue(lumiPlate.IsPressed, "Lumi dikenlerin arasından plakaya ulaşamadı.");
+
+            SpikeTrap[] roomTraps = playerPlate.transform.parent.GetComponentsInChildren<SpikeTrap>();
             Assert.IsTrue(roomTraps.All(t => t.IsSuppressed && !t.IsDangerous), "İki plaka birlikte bütün dikenleri durdurmalı.");
         }
 

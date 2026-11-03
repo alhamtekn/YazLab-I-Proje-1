@@ -242,7 +242,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             traps.AddRange(farColumn);
             foreach (SpikeTrap trap in traps)
             {
-                trap.SetTiming(new Vector2(0.8f, 1.6f), 0.5f, new Vector2(1.4f, 2.4f));
+                trap.SetTiming(new Vector2(1f, 2f), 0.5f, new Vector2(1.2f, 2f));
             }
 
             room.gameObject.AddComponent<SpikeTrapField>().Configure(traps.ToArray(), resetPoint);
