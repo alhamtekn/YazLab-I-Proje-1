@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Lumen.EditorTools.SceneBuilding.Sections
 {
-    /// <summary>Geliştirici 1 — oyuncu karakteri ve üçüncü şahıs kamera.</summary>
+    /// <summary>Geliştirici 1 — oyuncu karakteri ve birinci şahıs kamera.</summary>
     public sealed class PlayerSection : ISceneSection
     {
         public static readonly Vector3 SpawnPoint = new Vector3(0f, 0.05f, 4f);
@@ -38,10 +38,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             cam.backgroundColor = Color.black;
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 120f;
+            cam.cullingMask = ~(1 << GameLayers.PlayerIndex); // birinci şahısta oyuncu kendi gövdesini görmesin
             cameraGo.AddComponent<AudioListener>();
-            ThirdPersonCamera follow = cameraGo.AddComponent<ThirdPersonCamera>();
-            follow.Configure(player.transform, 1 << 0);
-            cameraGo.transform.position = SpawnPoint + new Vector3(0f, 3f, -5f);
+            cameraGo.AddComponent<FirstPersonCamera>().Configure(player.transform);
+            cameraGo.transform.position = SpawnPoint + Vector3.up * 1.6f;
 
             controller.Configure(cameraGo.transform);
 
