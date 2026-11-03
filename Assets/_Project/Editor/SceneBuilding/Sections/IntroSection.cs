@@ -1,3 +1,5 @@
+using Lumen.Companion;
+using Lumen.Player;
 using UnityEngine;
 
 namespace Lumen.EditorTools.SceneBuilding.Sections
@@ -23,6 +25,24 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform corridor = new GameObject("IntroCorridor").transform;
             corridor.SetParent(ctx.Root("Level"), false);
             BuildCorridor(ctx, corridor);
+            BuildMeeting(ctx, corridor);
+        }
+
+        /// <summary>Lumi'nin çevresinde tetik: oyuncu girince tanışma metni ve takip başlar.</summary>
+        private static void BuildMeeting(SceneBuildContext ctx, Transform corridor)
+        {
+            CompanionController companion = ctx.Get<CompanionController>();
+            var meeting = new GameObject("LumiMeeting") { layer = 2 };
+            meeting.transform.SetParent(corridor, false);
+            meeting.transform.position = CompanionSection.SpawnPoint;
+
+            SphereCollider trigger = meeting.AddComponent<SphereCollider>();
+            trigger.isTrigger = true;
+            trigger.center = new Vector3(0f, 1f, 0f);
+            trigger.radius = 3f;
+
+            Light lumiLight = companion.transform.Find("Light")?.GetComponent<Light>();
+            meeting.AddComponent<CompanionMeeting>().Configure(companion, ctx.Get<HudView>(), lumiLight);
         }
 
         private static void BuildCorridor(SceneBuildContext ctx, Transform corridor)
