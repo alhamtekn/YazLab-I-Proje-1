@@ -40,6 +40,11 @@ namespace Lumen.EditorTools.SceneBuilding
             ["Metal"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.5f, Tiling = 1.5f },
             ["GateDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
             ["ArvenDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), Tint = new Color(1.1f, 0.95f, 0.8f), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
+            // Hareket eden ya da tek parça nesneler nesne uzayında, nesne başına bir kez döşenir (Tiling = 1).
+            ["LumiGlow"] = new Theme { Main = () => Get("lumi_panels", LumiPanels), Emission = () => Get("lumi_glow", LumiGlow), EmissionColor = new Color(1.2f, 1.35f, 1.6f), Tiling = 0.5f, ObjectSpace = true },
+            ["LumiEye"] = new Theme { Emission = () => Get("lumi_eye_strip", LumiEyeStrip), Tint = new Color(0.05f, 0.08f, 0.12f), EmissionColor = Blue * 2.2f, Tiling = 1f, ObjectSpace = true },
+            ["ArvenStone"] = new Theme { Main = () => Get("statue_stone", StatueStone), Emission = () => Get("chest_rune", ChestRune), EmissionColor = Gold * 0.7f, Tiling = 1f, ObjectSpace = true },
+            ["Seal"] = new Theme { Main = () => Get("seal_brass", SealBrass), Emission = () => Get("seal_rings", SealRings), EmissionColor = Gold * 1.2f, Tiling = 1f, ObjectSpace = true },
             ["EnergyBarrier"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 1.4f, Tiling = 1f },
         };
 
@@ -260,7 +265,158 @@ namespace Lumen.EditorTools.SceneBuilding
             return Opaque(pixels);
         }
 
+        /// <summary>Lumi'nin gövdesi: beyaz-gümüş, ince panel çizgileri.</summary>
+        private static Color[] LumiPanels()
+        {
+            var pixels = new Color[Size * Size];
+            var silver = new Color(0.86f, 0.88f, 0.92f);
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    bool seam = x % 64 < 2 || y % 64 < 2;
+                    pixels[y * Size + x] = seam ? silver * 0.55f : silver * (0.95f + 0.08f * TileNoise(x, y, 6f, 6));
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lumi'nin ışıması: paneller parlar, derzler karanlık kalır.</summary>
+        private static Color[] LumiGlow()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    bool seam = x % 64 < 3 || y % 64 < 3;
+                    pixels[y * Size + x] = seam ? Color.black : Color.white;
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lumi'nin gözü: ortada yatay mavi şerit, kenarları yumuşak.</summary>
+        private static Color[] LumiEyeStrip()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                float band = Mathf.Clamp01(1f - Mathf.Abs(y - Size * 0.5f) / (Size * 0.18f));
+                for (int x = 0; x < Size; x++)
+                {
+                    float edge = Mathf.Clamp01(Mathf.Min(x, Size - 1 - x) / (Size * 0.12f));
+                    pixels[y * Size + x] = Color.white * Mathf.SmoothStep(0f, 1f, band) * edge;
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Arven: yıpranmış heykel taşı, koyu lekeler ve aşınma.</summary>
+        private static Color[] StatueStone()
+        {
+            var pixels = new Color[Size * Size];
+            var random = new System.Random(41);
+            var stone = new Color(0.4f, 0.38f, 0.35f);
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float wear = 0.75f + 0.35f * TileNoise(x, y, 14f, 7) + 0.1f * TileNoise(x, y, 3f, 8);
+                    float stain = TileNoise(x, y, 40f, 9) > 0.62f ? 0.75f : 1f;
+                    pixels[y * Size + x] = stone * wear * stain;
+                }
+            }
+
+            for (int i = 0; i < 10; i++)
+            {
+                DrawCrack(pixels, random, 0.55f);
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Arven'in göğsündeki sönük altın rün: halka, içinde dikey çizgi ve iki kol.</summary>
+        private static Color[] ChestRune()
+        {
+            var pixels = new Color[Size * Size];
+            const int cx = Size / 2;
+            const int cy = Size / 2 + 24;
+            DrawRing(pixels, cx, cy, 34, 3, 0f, 1f);
+            for (int i = -26; i <= 26; i++)
+            {
+                Set(pixels, cx, cy + i, Color.white);
+                Set(pixels, cx + 1, cy + i, Color.white);
+            }
+
+            for (int i = 0; i < 18; i++)
+            {
+                Set(pixels, cx - i, cy + 8 + i / 2, Color.white);
+                Set(pixels, cx + i, cy + 8 + i / 2, Color.white);
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Mühür: altın-pirinç, iç içe dairesel oymalar.</summary>
+        private static Color[] SealBrass()
+        {
+            var pixels = new Color[Size * Size];
+            Color brass = Gold * 0.85f;
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float r = Vector2.Distance(new Vector2(x, y), new Vector2(Size * 0.5f, Size * 0.5f));
+                    bool groove = Mathf.Abs(r % 30f - 15f) < 1.5f;
+                    float shine = 0.85f + 0.2f * TileNoise(x, y, 8f, 10);
+                    pixels[y * Size + x] = groove ? brass * 0.45f : brass * shine;
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Mühür üzerindeki halka rünler: iki halka boyunca aralıklı yaylar.</summary>
+        private static Color[] SealRings()
+        {
+            var pixels = new Color[Size * Size];
+            for (int segment = 0; segment < 12; segment++)
+            {
+                float start = segment / 12f;
+                DrawRing(pixels, Size / 2, Size / 2, 60, 2, start, start + 0.05f);
+                DrawRing(pixels, Size / 2, Size / 2, 105, 2, start + 0.04f, start + 0.07f);
+            }
+
+            return Opaque(pixels);
+        }
+
         // ---------- Yardımcılar ----------
+
+        /// <summary>Halka ya da halka yayı çizer; from/to turun kesri (0-1).</summary>
+        private static void DrawRing(Color[] pixels, int cx, int cy, int radius, int thickness, float from, float to)
+        {
+            for (int y = cy - radius - thickness; y <= cy + radius + thickness; y++)
+            {
+                for (int x = cx - radius - thickness; x <= cx + radius + thickness; x++)
+                {
+                    float r = Mathf.Sqrt((x - cx) * (x - cx) + (y - cy) * (y - cy));
+                    if (Mathf.Abs(r - radius) > thickness * 0.5f)
+                    {
+                        continue;
+                    }
+
+                    float turn = (Mathf.Atan2(y - cy, x - cx) / (2f * Mathf.PI) + 1f) % 1f;
+                    if (turn >= from && turn <= to)
+                    {
+                        Set(pixels, x, y, Color.white);
+                    }
+                }
+            }
+        }
 
         /// <summary>Kenarları birleşen (tekrarlanabilir) Perlin gürültüsü, 0-1 aralığında.</summary>
         private static float TileNoise(float x, float y, float scale, int seed)

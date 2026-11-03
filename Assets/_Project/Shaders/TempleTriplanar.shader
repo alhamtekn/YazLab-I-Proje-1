@@ -53,7 +53,8 @@ Shader "Lumen/TempleTriplanar"
             // Lumi ve kapı gibi hareket eden nesnelerde doku nesneyle birlikte gitsin diye nesne uzayı kullanılır.
             float3 objectPos = mul(unity_WorldToObject, float4(IN.worldPos, 1)).xyz;
             float3 objectNormal = normalize(mul((float3x3)unity_WorldToObject, IN.worldNormal));
-            float3 p = lerp(IN.worldPos, objectPos, _ObjectSpace);
+            // Birim küp/küre -0.5..0.5 aralığında; +0.5 ile dokunun ortası nesnenin ortasına gelir.
+            float3 p = lerp(IN.worldPos, objectPos + 0.5, _ObjectSpace);
             float3 n = lerp(IN.worldNormal, objectNormal, _ObjectSpace);
 
             fixed4 albedo = Triplanar(_MainTex, p, n) * _Color;
