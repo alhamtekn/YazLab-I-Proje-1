@@ -55,7 +55,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             float wallCenterY = (WallHeight + PitDepth) * 0.5f;
             float wallSizeY = WallHeight - PitDepth;
-            ctx.Box("Wall_Back", shell, new Vector3(-5f, wallCenterY, -0.25f), new Vector3(26.5f, wallSizeY, 0.5f), stone);
+            // Arka duvarda giriş koridoruna (IntroSection) açılan kapı: x[-1.5, 1.5]
+            ctx.Box("Wall_Back_L", shell, new Vector3((-18.25f - IntroSection.HalfWidth) * 0.5f, wallCenterY, -0.25f), new Vector3(18.25f - IntroSection.HalfWidth, wallSizeY, 0.5f), stone);
+            ctx.Box("Wall_Back_R", shell, new Vector3((8.25f + IntroSection.HalfWidth) * 0.5f, wallCenterY, -0.25f), new Vector3(8.25f - IntroSection.HalfWidth, wallSizeY, 0.5f), stone);
+            ctx.Box("Wall_Back_Lintel", shell, new Vector3(0f, (MiddleZoneSection.DoorHeight + WallHeight) * 0.5f, -0.25f), new Vector3(IntroSection.HalfWidth * 2f, WallHeight - MiddleZoneSection.DoorHeight, 0.5f), stone);
             // Galerinin yan duvarlarında kristal odalarına açılan kapı boşlukları var (MiddleZoneSection).
             WallWithOpenings(ctx, shell, "Wall_Right", 8.25f, -0.5f, 58.5f, MiddleZoneSection.EastRoomDoors, stone);
             ctx.Box("Wall_TrapRoom_Left", shell, new Vector3(-18.25f, wallCenterY, 8f), new Vector3(0.5f, wallSizeY, 16f), stone);
