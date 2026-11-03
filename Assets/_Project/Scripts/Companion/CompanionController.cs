@@ -18,6 +18,7 @@ namespace Lumen.Companion
         [SerializeField] private Transform player;
         [SerializeField] private RaycastSensor sensor;
         [SerializeField] private CompanionSettings settings = new CompanionSettings();
+        [SerializeField] private bool holdUntilCommanded;
 
         private NavMeshAgent agent;
         private CompanionStateMachine machine;
@@ -38,6 +39,12 @@ namespace Lumen.Companion
             sensor = raycastSensor;
         }
 
+        /// <summary>Oyun başında Lumi'nin ilk emre kadar yerinde beklemesi için (giriş koridorundaki tanışma).</summary>
+        public void SetHoldUntilCommanded(bool hold)
+        {
+            holdUntilCommanded = hold;
+        }
+
         public bool CommandHelp()
         {
             ICompanionTarget target = context.Selector.SelectBest(transform.position);
@@ -46,6 +53,7 @@ namespace Lumen.Companion
                 return false;
             }
 
+            context.HoldPosition = false;
             context.CurrentTarget = target;
             machine.ChangeState(CompanionStateId.MoveToTarget);
             return true;
@@ -53,6 +61,7 @@ namespace Lumen.Companion
 
         public void CommandFollow()
         {
+            context.HoldPosition = false;
             context.CurrentTarget = null;
             machine.ChangeState(CompanionStateId.Follow);
         }
@@ -69,6 +78,7 @@ namespace Lumen.Companion
         {
             agent.Warp(position);
             HazardHits = 0;
+            context.HoldPosition = false;
             context.CurrentTarget = null;
             machine.ChangeState(CompanionStateId.Idle);
         }
@@ -77,6 +87,7 @@ namespace Lumen.Companion
         {
             agent = GetComponent<NavMeshAgent>();
             context = new CompanionContext(agent, transform, player, sensor, new NavMeshTargetSelector(), settings);
+            context.HoldPosition = holdUntilCommanded;
 
             machine = new CompanionStateMachine();
             machine.Register(new IdleState(context, machine));

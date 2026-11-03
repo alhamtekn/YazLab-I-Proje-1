@@ -1,5 +1,6 @@
 using Lumen.Companion;
 using Lumen.Player;
+using UnityEditor;
 using UnityEngine;
 
 namespace Lumen.EditorTools.SceneBuilding.Sections
@@ -32,6 +33,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         private static void BuildMeeting(SceneBuildContext ctx, Transform corridor)
         {
             CompanionController companion = ctx.Get<CompanionController>();
+            companion.SetHoldUntilCommanded(true); // tanışmaya kadar koridorun sonunda bekler
+            PrefabUtility.RecordPrefabInstancePropertyModifications(companion); // Lumi prefab örneği: değişiklik sahneye yazılsın
+
             var meeting = new GameObject("LumiMeeting") { layer = 2 };
             meeting.transform.SetParent(corridor, false);
             meeting.transform.position = CompanionSection.SpawnPoint;

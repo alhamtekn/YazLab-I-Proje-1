@@ -38,6 +38,9 @@ namespace Lumen.Companion.StateMachine
         /// <summary>Avoid durumundan sonra dönülecek durum.</summary>
         public CompanionStateId ResumeState { get; set; } = CompanionStateId.Follow;
 
+        /// <summary>Doğruysa Lumi bir emir (yardım/takip) gelene kadar yerinde bekler; oyuncu uzaklaşsa da kendiliğinden takip etmez.</summary>
+        public bool HoldPosition { get; set; }
+
         /// <summary>Avoid sırasında yolu güncel tutmak için kullanılan hedef konum.</summary>
         public Func<Vector3> AvoidDestination { get; set; }
 
