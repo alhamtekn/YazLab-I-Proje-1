@@ -51,19 +51,51 @@ namespace Lumen.EditorTools.SceneBuilding
             return root;
         }
 
-        public Material Mat(string name, Color color, Color? emission = null, float metallic = 0f, float smoothness = 0.2f)
+        /// <summary>
+        /// Adıyla kaydedilen malzeme. Doku verilirse ya da adın TempleTextures'ta bir teması varsa
+        /// dokular üç yönlü shader'la (Lumen/TempleTriplanar) uygulanır; tiling metrede bir tekrardır.
+        /// Temalı malzemelerde renk ve ışıma rengi temadan gelir, verilen değerler yok sayılır.
+        /// </summary>
+        public Material Mat(string name, Color color, Color? emission = null, float metallic = 0f, float smoothness = 0.2f,
+            Texture2D mainTex = null, Texture2D emissionMap = null, float tiling = 1f)
         {
             if (materials.TryGetValue(name, out Material cached))
             {
                 return cached;
             }
 
+            bool objectSpace = false;
+            if (mainTex == null && emissionMap == null && TempleTextures.TryGet(name, out TempleTextures.Theme theme))
+            {
+                mainTex = theme.Main?.Invoke();
+                emissionMap = theme.Emission?.Invoke();
+                color = theme.Tint;
+                tiling = theme.Tiling;
+                objectSpace = theme.ObjectSpace;
+                if (emissionMap != null)
+                {
+                    emission = theme.EmissionColor;
+                }
+            }
+
+            bool textured = mainTex != null || emissionMap != null;
+            Shader shader = Shader.Find(textured ? "Lumen/TempleTriplanar" : "Standard");
+
             string path = $"{MaterialFolder}/{name}.mat";
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                material = new Material(Shader.Find("Standard"));
+                material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            if (textured)
+            {
+                material.SetTexture("_MainTex", mainTex != null ? mainTex : Texture2D.whiteTexture);
+                material.SetTexture("_EmissionMap", emissionMap != null ? emissionMap : Texture2D.blackTexture);
+                material.SetFloat("_Tiling", tiling);
+                material.SetFloat("_ObjectSpace", objectSpace ? 1f : 0f);
             }
 
             material.color = color;
