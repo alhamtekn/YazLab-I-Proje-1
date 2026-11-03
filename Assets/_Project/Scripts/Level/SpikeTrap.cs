@@ -37,11 +37,33 @@ namespace Lumen.Level
 
         public bool IsDangerous => Phase != SpikePhase.Down;
 
+        /// <summary>Bastırılan tuzak inik kalır ve döngüsü durur (diken odasındaki basınç plakaları).</summary>
+        public bool IsSuppressed { get; private set; }
+
         public void Configure(Transform spikeVisual, Renderer warning, NavMeshObstacle navObstacle)
         {
             spikes = spikeVisual;
             warningRenderer = warning;
             obstacle = navObstacle;
+        }
+
+        /// <summary>Döngü süreleri (saniye). Diken odasında tuzaklar daha sık açılır.</summary>
+        public void SetTiming(Vector2 down, float warning, Vector2 up)
+        {
+            downDuration = down;
+            warningDuration = warning;
+            upDuration = up;
+        }
+
+        public void SetSuppressed(bool suppressed)
+        {
+            IsSuppressed = suppressed;
+            if (suppressed)
+            {
+                SetPhase(SpikePhase.Down);
+            }
+
+            phaseTimer = suppressed ? 0f : Range(downDuration.x * 0.5f, downDuration.x);
         }
 
         /// <summary>Tuzak alanı tarafından çağrılır: tohum, başlangıç fazı ve yakalanınca dönülecek nokta.</summary>
@@ -61,6 +83,11 @@ namespace Lumen.Level
 
         private void Update()
         {
+            if (IsSuppressed)
+            {
+                return;
+            }
+
             phaseTimer -= Time.deltaTime;
             if (phaseTimer > 0f)
             {
