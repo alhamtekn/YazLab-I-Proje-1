@@ -12,7 +12,7 @@ namespace Lumen.NPC
     {
         [SerializeField] private string baseUrl = "http://localhost:11434";
         [SerializeField] private string model = "gemma3:4b"; // qwen2.5:7b ile karşılaştırıldı: Türkçesi daha düzgün, ~2 kat hızlı
-        [SerializeField] private int timeoutSeconds = 60;
+        [SerializeField] private int timeoutSeconds = 30;    // model 2-3 sn'de cevap veriyor; takılırsa oyuncu çok beklemesin
         [SerializeField] private float temperature = 0.6f;   // düşük = daha tutarlı, yüksek = daha yaratıcı cevaplar
 
         public async Awaitable<string> SendAsync(IReadOnlyList<ChatMessage> messages)
