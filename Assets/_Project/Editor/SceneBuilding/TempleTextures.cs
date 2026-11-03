@@ -36,6 +36,7 @@ namespace Lumen.EditorTools.SceneBuilding
         {
             ["Stone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), EmissionColor = Gold * 0.9f, Tiling = 2.5f },
             ["PillarStone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), Tint = new Color(1.05f, 1.02f, 1f), EmissionColor = Gold * 0.7f, Tiling = 2f },
+            ["CeilingStone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), Tint = new Color(0.55f, 0.53f, 0.52f), EmissionColor = Gold * 0.35f, Tiling = 3f },
             ["Floor"] = new Theme { Main = () => Get("basalt_tiles", BasaltTiles), Emission = () => Get("floor_circuits", FloorCircuits), EmissionColor = Blue * 0.45f, Tiling = 2f },
             ["Metal"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.5f, Tiling = 1.5f },
             ["GateDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.9f, Tiling = 1.5f },

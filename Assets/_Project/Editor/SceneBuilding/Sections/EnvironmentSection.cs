@@ -21,6 +21,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     {
         public const float WallHeight = 4f;
         public const float PitDepth = -8f;
+        public const string CeilingLayer = "Ceiling"; // ProjectSettings/TagManager: 12. katman
 
         public int Order => 0;
 
@@ -70,6 +71,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_End_Lintel", shell, new Vector3(0f, (MiddleZoneSection.DoorHeight + WallHeight) * 0.5f, 58.25f), new Vector3(3f, WallHeight - MiddleZoneSection.DoorHeight, 0.5f), stone);
 
             BuildLavaPit(ctx, shell);
+            BuildCeiling(ctx, shell);
 
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
@@ -77,6 +79,22 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
+        }
+
+        /// <summary>
+        /// 1. ve 2. bölümün tavanı: giriş koridoru, salon, tuzak odası, uçurum, galeri, kristal odaları ve Arven'in
+        /// bölgesi (z 58.5'e kadar) tek bir kutuyla kapanır. "Ceiling" katmanında (12) ve collider'sız:
+        /// NavMesh yalnızca 0. katmanı pişirdiği için üstünde yol oluşmaz, mini harita kamerası da bu katmanı çizmez.
+        /// </summary>
+        private static void BuildCeiling(SceneBuildContext ctx, Transform shell)
+        {
+            const float minX = -18.5f;
+            const float maxX = 8f + MiddleZoneSection.RoomDepth + 0.5f;
+            const float minZ = -IntroSection.Length - 0.5f;
+            const float maxZ = 58.5f;
+            Material ceiling = ctx.Mat("CeilingStone", new Color(0.2f, 0.19f, 0.18f));
+            ctx.Box("Ceiling", shell, new Vector3((minX + maxX) * 0.5f, WallHeight + 0.25f, (minZ + maxZ) * 0.5f),
+                new Vector3(maxX - minX, 0.5f, maxZ - minZ), ceiling, false, LayerMask.NameToLayer(CeilingLayer));
         }
 
         /// <summary>
