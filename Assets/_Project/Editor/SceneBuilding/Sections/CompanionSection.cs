@@ -10,7 +10,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     /// <summary>Geliştirici 1 — ışık saçan eşlikçi Lumi (NavMeshAgent + RaycastSensor + FSM).</summary>
     public sealed class CompanionSection : ISceneSection
     {
-        public static readonly Vector3 SpawnPoint = new Vector3(2f, 0f, 4f);
+        public static readonly Vector3 SpawnPoint = new Vector3(0f, 0f, -2f); // giriş koridorunun sonunda, oyuncuyu bekler (IntroSection)
 
         public int Order => 20;
 

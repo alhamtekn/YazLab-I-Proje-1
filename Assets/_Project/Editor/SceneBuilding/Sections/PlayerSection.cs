@@ -7,7 +7,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     /// <summary>Geliştirici 1 — oyuncu karakteri ve birinci şahıs kamera.</summary>
     public sealed class PlayerSection : ISceneSection
     {
-        public static readonly Vector3 SpawnPoint = new Vector3(0f, 0.05f, 4f);
+        public static readonly Vector3 SpawnPoint = new Vector3(0f, 0.05f, -18f); // giriş koridorunun başı (IntroSection)
 
         public int Order => 10;
 

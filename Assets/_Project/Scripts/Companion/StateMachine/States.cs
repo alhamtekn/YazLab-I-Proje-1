@@ -22,7 +22,7 @@ namespace Lumen.Companion.StateMachine
 
         public override void Tick(float deltaTime)
         {
-            if (Context.PlanarDistanceTo(Context.Player.position) > Context.Settings.followStartDistance)
+            if (!Context.HoldPosition && Context.PlanarDistanceTo(Context.Player.position) > Context.Settings.followStartDistance)
             {
                 Machine.ChangeState(CompanionStateId.Follow);
             }
