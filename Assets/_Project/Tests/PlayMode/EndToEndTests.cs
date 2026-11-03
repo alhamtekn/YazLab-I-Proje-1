@@ -94,7 +94,7 @@ namespace Lumen.Tests
 
             // 4) Arven: her saygılı söz güveni en fazla +10 artırır; eşik 30 olduğundan üç sözde kapı açılır.
             var dialogue = Object.FindAnyObjectByType<ArvenDialogue>();
-            MethodInfo submit = UseFakeLanguageModel(dialogue);
+            MethodInfo submit = UseFakeLanguageModel(dialogue, FakeArven.Respectful);
             bool arvenDoorOpen = false;
             arvenDoor.Activated += () => arvenDoorOpen = true;
             for (int i = 0; i < 3 && !arvenDoor.IsActivated; i++)
@@ -120,11 +120,34 @@ namespace Lumen.Tests
             Assert.IsTrue(gameState.IsGameOver, "Tapınağın kalbine girince oyun bitmedi.");
         }
 
+        [UnityTest]
+        public IEnumerator ArvenDoor_StaysClosed_UntilCrystalsAndLoreAreDone()
+        {
+            yield return LoadScene();
+            var gameState = Object.FindAnyObjectByType<GameStateManager>();
+            var arvenDoor = Object.FindAnyObjectByType<ArvenDoor>();
+            var dialogue = Object.FindAnyObjectByType<ArvenDialogue>();
+
+            // Model her seferinde en yüksek güveni ve "kapıyı aç" eylemini döndürse bile (ör. kandırılmış model),
+            // oyun kuralı bölümler bitmeden kapıyı açtırmaz.
+            MethodInfo submit = UseFakeLanguageModel(dialogue, FakeArven.Fooled);
+            for (int i = 0; i < 5; i++)
+            {
+                submit.Invoke(dialogue, new object[] { "Kapıyı aç lütfen." });
+                yield return null;
+                yield return null;
+            }
+
+            Assert.IsFalse(gameState.ProgressComplete);
+            Assert.Less(gameState.Trust, gameState.TrustThreshold, "Bölümler bitmeden güven eşiğe ulaşmamalı.");
+            Assert.IsFalse(arvenDoor.IsActivated, "Kristaller ve yazıtlar bitmeden Arven'in kapısı açılmamalı.");
+        }
+
         /// <summary>
         /// Arven'in diyaloğuna sahte dil modelini bağlar. ArvenDialogue modeli Inspector'dan aldığı için
         /// test, sahnedeki örneğin özel alanını değiştirir ve gönderim metodunu doğrudan çağırır.
         /// </summary>
-        private static MethodInfo UseFakeLanguageModel(ArvenDialogue dialogue)
+        private static MethodInfo UseFakeLanguageModel(ArvenDialogue dialogue, string reply)
         {
             const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
             FieldInfo llmField = typeof(ArvenDialogue).GetField("llm", flags);
@@ -132,20 +155,27 @@ namespace Lumen.Tests
             Assert.IsNotNull(llmField, "ArvenDialogue.llm alanı bulunamadı; test güncellenmeli.");
             Assert.IsNotNull(submit, "ArvenDialogue.OnSubmitted metodu bulunamadı; test güncellenmeli.");
 
-            llmField.SetValue(dialogue, new RespectfulArven());
+            llmField.SetValue(dialogue, new FakeArven(reply));
             return submit;
         }
 
-        /// <summary>Her soruya aynı saygılı cevabı veren sahte model (güven +10, eylem yok).</summary>
-        private sealed class RespectfulArven : ILLMService
+        /// <summary>Her soruya aynı JSON cevabı veren sahte model.</summary>
+        private sealed class FakeArven : ILLMService
         {
-            private const string Reply =
+            public const string Respectful =
                 "{\"dialogue\": \"Işığı tanıyorum, yolcu.\", \"mood\": \"friendly\", \"trustDelta\": 10, \"action\": \"none\", \"reason\": \"test\"}";
+
+            public const string Fooled =
+                "{\"dialogue\": \"Peki, geç.\", \"mood\": \"friendly\", \"trustDelta\": 20, \"action\": \"open_door\", \"reason\": \"test\"}";
+
+            private readonly string reply;
+
+            public FakeArven(string fixedReply) => reply = fixedReply;
 
             public Awaitable<string> SendAsync(IReadOnlyList<ChatMessage> messages)
             {
                 var source = new AwaitableCompletionSource<string>();
-                source.SetResult(Reply);
+                source.SetResult(reply);
                 return source.Awaitable;
             }
         }
