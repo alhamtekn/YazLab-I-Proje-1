@@ -36,10 +36,14 @@ namespace Lumen.EditorTools.SceneBuilding
         {
             ["Stone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), EmissionColor = Gold * 0.9f, Tiling = 2.5f },
             ["PillarStone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), Tint = new Color(1.05f, 1.02f, 1f), EmissionColor = Gold * 0.7f, Tiling = 2f },
+            ["CeilingStone"] = new Theme { Main = () => Get("stone_blocks", StoneBlocks), Emission = () => Get("stone_runes", StoneRunes), Tint = new Color(0.55f, 0.53f, 0.52f), EmissionColor = Gold * 0.35f, Tiling = 3f },
             ["Floor"] = new Theme { Main = () => Get("basalt_tiles", BasaltTiles), Emission = () => Get("floor_circuits", FloorCircuits), EmissionColor = Blue * 0.45f, Tiling = 2f },
             ["Metal"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.5f, Tiling = 1.5f },
             ["GateDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
             ["ArvenDoor"] = new Theme { Main = () => Get("metal_panels", MetalPanels), Emission = () => Get("metal_scanlines", MetalScanlines), Tint = new Color(1.1f, 0.95f, 0.8f), EmissionColor = Blue * 0.9f, Tiling = 1.5f },
+            // Köprü kalkıp indiği için doku nesneyle birlikte döner; kalaslar köprünün boyunca 0.5 m aralıklı.
+            ["Lava"] = new Theme { Main = () => Get("lava_crust", LavaCrust), Emission = () => Get("lava_glow", LavaGlowMap), Tint = new Color(1f, 0.5f, 0.2f), EmissionColor = new Color(3f, 0.9f, 0.15f), Tiling = 4f },
+            ["BridgeWood"] = new Theme { Main = () => Get("bridge_planks", BridgePlanks), Tiling = 1f, ObjectSpace = true },
             // Hareket eden ya da tek parça nesneler nesne uzayında, nesne başına bir kez döşenir (Tiling = 1).
             ["LumiGlow"] = new Theme { Main = () => Get("lumi_panels", LumiPanels), Emission = () => Get("lumi_glow", LumiGlow), EmissionColor = new Color(1.2f, 1.35f, 1.6f), Tiling = 0.5f, ObjectSpace = true },
             ["LumiEye"] = new Theme { Emission = () => Get("lumi_eye_strip", LumiEyeStrip), Tint = new Color(0.05f, 0.08f, 0.12f), EmissionColor = Blue * 2.2f, Tiling = 1f, ObjectSpace = true },
@@ -260,6 +264,81 @@ namespace Lumen.EditorTools.SceneBuilding
 
                     x += length + gap;
                 }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lav kabuğu: koyu, soğumuş kayadan adacıklar; aralarında akan lav (ışıma katmanında).</summary>
+        private static Color[] LavaCrust()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float n = TileNoise(x, y, 12f, 61) * 0.7f + TileNoise(x, y, 4f, 62) * 0.3f;
+                    pixels[y * Size + x] = n > 0.52f ? new Color(0.12f, 0.07f, 0.05f) * (0.7f + n * 0.5f) : new Color(1f, 0.6f, 0.2f);
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>Lavın ışıması: kabuğun olmadığı yerlerde parlak, kabuk kenarlarında sönerek.</summary>
+        private static Color[] LavaGlowMap()
+        {
+            var pixels = new Color[Size * Size];
+            for (int y = 0; y < Size; y++)
+            {
+                for (int x = 0; x < Size; x++)
+                {
+                    float n = TileNoise(x, y, 12f, 61) * 0.7f + TileNoise(x, y, 4f, 62) * 0.3f;
+                    float glow = Mathf.Clamp01((0.56f - n) / 0.12f);
+                    pixels[y * Size + x] = Color.white * glow;
+                }
+            }
+
+            return Opaque(pixels);
+        }
+
+        /// <summary>
+        /// Eski köprü kalasları: v yönünde 16 kalas (köprünün 8 m'lik boyunda 0.5 m), aralarında koyu boşluk,
+        /// u yönünde iki kenarda boydan boya metal kuşak ve perçinler.
+        /// </summary>
+        private static Color[] BridgePlanks()
+        {
+            var pixels = new Color[Size * Size];
+            var wood = new Color(0.36f, 0.23f, 0.13f);
+            var iron = new Color(0.2f, 0.2f, 0.22f);
+            float[] plankShade = RandomShades(new System.Random(51), 16, 0.75f, 1.15f);
+            const int plank = Size / 16;
+            for (int y = 0; y < Size; y++)
+            {
+                int index = y / plank;
+                bool gap = y % plank < 2;
+                for (int x = 0; x < Size; x++)
+                {
+                    bool band = (x > 30 && x < 44) || (x > Size - 44 && x < Size - 30);
+                    float grain = 0.8f + 0.25f * TileNoise(x * 0.15f, y * 2.5f, 3f, 52) + 0.1f * TileNoise(x, y, 5f, 53);
+                    Color c = gap ? wood * 0.3f : wood * plankShade[index] * grain;
+                    if (band)
+                    {
+                        c = iron * (0.85f + 0.3f * TileNoise(x, y, 4f, 54));
+                        if (y % plank == plank / 2 && (x == 37 || x == Size - 37))
+                        {
+                            c = iron * 2.2f;
+                        }
+                    }
+
+                    pixels[y * Size + x] = c;
+                }
+            }
+
+            for (int i = 0; i < 16; i++)
+            {
+                DrawDot(pixels, 37, i * plank + plank / 2, 2, iron * 2f);
+                DrawDot(pixels, Size - 37, i * plank + plank / 2, 2, iron * 2f);
             }
 
             return Opaque(pixels);

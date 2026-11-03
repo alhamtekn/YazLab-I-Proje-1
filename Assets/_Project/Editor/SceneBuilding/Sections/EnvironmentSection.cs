@@ -21,6 +21,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
     {
         public const float WallHeight = 4f;
         public const float PitDepth = -8f;
+        public const string CeilingLayer = "Ceiling"; // ProjectSettings/TagManager: 12. katman
 
         public int Order => 0;
 
@@ -69,12 +70,61 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Wall_End_R", shell, new Vector3(5f, wallCenterY, 58.25f), new Vector3(7f, wallSizeY, 0.5f), stone);
             ctx.Box("Wall_End_Lintel", shell, new Vector3(0f, (MiddleZoneSection.DoorHeight + WallHeight) * 0.5f, 58.25f), new Vector3(3f, WallHeight - MiddleZoneSection.DoorHeight, 0.5f), stone);
 
+            BuildLavaPit(ctx, shell);
+            BuildCeiling(ctx, shell);
+
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
             killZone.AddComponent<KillZone>();
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
+        }
+
+        /// <summary>
+        /// 1. ve 2. bölümün tavanı: giriş koridoru, salon, tuzak odası, uçurum, galeri, kristal odaları ve Arven'in
+        /// bölgesi (z 58.5'e kadar) tek bir kutuyla kapanır. "Ceiling" katmanında (12) ve collider'sız:
+        /// NavMesh yalnızca 0. katmanı pişirdiği için üstünde yol oluşmaz, mini harita kamerası da bu katmanı çizmez.
+        /// </summary>
+        private static void BuildCeiling(SceneBuildContext ctx, Transform shell)
+        {
+            const float minX = -18.5f;
+            const float maxX = 8f + MiddleZoneSection.RoomDepth + 0.5f;
+            const float minZ = -IntroSection.Length - 0.5f;
+            const float maxZ = 58.5f;
+            Material ceiling = ctx.Mat("CeilingStone", new Color(0.2f, 0.19f, 0.18f));
+            ctx.Box("Ceiling", shell, new Vector3((minX + maxX) * 0.5f, WallHeight + 0.25f, (minZ + maxZ) * 0.5f),
+                new Vector3(maxX - minX, 0.5f, maxZ - minZ), ceiling, false, LayerMask.NameToLayer(CeilingLayer));
+        }
+
+        /// <summary>
+        /// Uçurumun dibi: parlayan lav yüzeyi, alttan duvarları aydınlatan turuncu ışıklar ve çukurun ön/arka
+        /// yan duvarları (zeminlerin altı boş görünmesin). Lav collider'sız ve Ignore Raycast katmanında,
+        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone ile kontrol noktasına döner.
+        /// "Lava" malzemesi kutsal bölümdeki uçurumda da kullanılır.
+        /// </summary>
+        private static void BuildLavaPit(SceneBuildContext ctx, Transform shell)
+        {
+            var lavaEmission = new Color(3f, 0.9f, 0.15f);
+            Material lava = ctx.Mat("Lava", new Color(1f, 0.35f, 0.05f), lavaEmission);
+            Material stone = ctx.Mat("Stone", new Color(0.27f, 0.26f, 0.29f));
+            Transform pit = new GameObject("LavaPit").transform;
+            pit.SetParent(shell, false);
+
+            float pitWallY = (PitDepth - 0.5f) * 0.5f;
+            float pitWallHeight = -0.5f - PitDepth;
+            ctx.Box("PitWall_Near", pit, new Vector3(0f, pitWallY, 15.75f), new Vector3(16f, pitWallHeight, 0.5f), stone, false);
+            ctx.Box("PitWall_Far", pit, new Vector3(0f, pitWallY, 24.25f), new Vector3(16f, pitWallHeight, 0.5f), stone, false);
+
+            GameObject surface = ctx.Box("LavaSurface", pit, new Vector3(0f, PitDepth + 0.35f, 20f), new Vector3(16f, 0.2f, 8f), lava, false, 2);
+
+            var lights = new Light[3];
+            for (int i = 0; i < lights.Length; i++)
+            {
+                lights[i] = ctx.PointLight($"LavaLight_{i}", pit, new Vector3(-5f + i * 5f, PitDepth + 2f, 20f), new Color(1f, 0.45f, 0.12f), 12f, 2.5f);
+            }
+
+            pit.gameObject.AddComponent<LavaGlow>().Configure(surface.GetComponent<Renderer>(), lights, lavaEmission);
         }
 
         /// <summary>
@@ -202,6 +252,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         private static void BuildChasmAndBridge(SceneBuildContext ctx, Transform level)
         {
             Material wood = ctx.Mat("Wood", new Color(0.3f, 0.18f, 0.1f));
+            Material bridgeWood = ctx.Mat("BridgeWood", new Color(0.3f, 0.18f, 0.1f)); // TempleTextures: eski kalaslar + metal kuşak
             Material metal = ctx.Mat("Metal", new Color(0.32f, 0.32f, 0.36f), null, 0.8f, 0.45f);
             Transform chasm = new GameObject("ChasmAndBridge").transform;
             chasm.SetParent(level, false);
@@ -210,9 +261,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Transform pivot = new GameObject("BridgePivot").transform;
             pivot.SetParent(chasm, false);
             pivot.localPosition = new Vector3(0f, 0f, 24f);
-            ctx.Box("Deck", pivot, new Vector3(0f, -0.15f, -4f), new Vector3(3f, 0.3f, 8f), wood);
-            ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), wood);
-            ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), wood);
+            ctx.Box("Deck", pivot, new Vector3(0f, -0.15f, -4f), new Vector3(3f, 0.3f, 8f), bridgeWood);
+            ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
+            ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
 
             ctx.InvisibleWall("EdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
             ctx.InvisibleWall("EdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
