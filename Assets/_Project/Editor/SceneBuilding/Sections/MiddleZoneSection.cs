@@ -217,9 +217,12 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         }
 
         /// <summary>
-        /// C odası: kapı ile kristal arasında 2×3 diken tuzağı (tuzak odasıyla aynı sınıflar).
-        /// Tuzaklar odanın tüm genişliğini kapladığından içlerinden geçmek gerekir; yakalanan oyuncu
-        /// ya da Lumi oda kapısına geri döner. Bu alan tuzak odasınınkinden ayrıdır ve ctx'e konmaz.
+        /// C odası (diken odası): kapı ile kristal arasında iki sütun hâlinde 2×3 diken tuzağı, tuzak odasındakinden
+        /// daha sık açılır. Tuzaklar odanın tüm genişliğini kaplar; iki güvenli bölge iki plakayla sağlanır:
+        ///   Oyuncu plakası (kapı tarafı, kuzeyde): üzerinde durunca yakın sütun iner, inince 6 sn daha inik kalır.
+        ///   Lumi plakası (karşı taraf, güneyde): F ile Lumi gönderilir; RaycastSensor ile açık dikenleri görüp
+        ///   etrafından dolaşarak gider, varınca uzak sütun kalıcı olarak durur.
+        /// Yakalanan oyuncu ya da Lumi oda kapısına döner. Bu alan tuzak odasınınkinden ayrıdır ve ctx'e konmaz.
         /// </summary>
         private static void BuildSpikeRoom(SceneBuildContext ctx, Transform room)
         {
@@ -227,17 +230,45 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             resetPoint.SetParent(room, false);
             resetPoint.localPosition = new Vector3(9f, 0f, 36f);
 
-            var traps = new List<SpikeTrap>();
-            foreach (float x in new[] { 10.4f, 12f })
+            var nearColumn = new List<SpikeTrap>();
+            var farColumn = new List<SpikeTrap>();
+            foreach (float z in new[] { 35f, 36.6f, 38.2f })
             {
-                foreach (float z in new[] { 35f, 36.6f, 38.2f })
-                {
-                    traps.Add(EnvironmentSection.BuildSpikeTrap(ctx, room, new Vector3(x, 0f, z)));
-                }
+                nearColumn.Add(EnvironmentSection.BuildSpikeTrap(ctx, room, new Vector3(10.4f, 0f, z)));
+                farColumn.Add(EnvironmentSection.BuildSpikeTrap(ctx, room, new Vector3(12f, 0f, z)));
+            }
+
+            var traps = new List<SpikeTrap>(nearColumn);
+            traps.AddRange(farColumn);
+            foreach (SpikeTrap trap in traps)
+            {
+                trap.SetTiming(new Vector2(0.8f, 1.6f), 0.5f, new Vector2(1.4f, 2.4f));
             }
 
             room.gameObject.AddComponent<SpikeTrapField>().Configure(traps.ToArray(), resetPoint);
-            ctx.Torch("Torch_Spikes", room, new Vector3(13.8f, 2.4f, 34.3f));
+            ctx.Torch("Torch_Spikes", room, new Vector3(13.8f, 2.4f, 36.6f));
+
+            Material plateMat = ctx.Mat("PlateBrass", new Color(0.55f, 0.45f, 0.25f), null, 0.7f, 0.5f);
+
+            // Oyuncu plakası: tetik Ignore Raycast katmanında, görseli ince bir kutu.
+            var playerPlate = new GameObject("PlayerPlate") { layer = 2 };
+            playerPlate.transform.SetParent(room, false);
+            playerPlate.transform.localPosition = new Vector3(9.05f, 0f, 38.4f);
+            ctx.Box("Plate", playerPlate.transform, new Vector3(0f, 0.02f, 0f), new Vector3(0.9f, 0.04f, 0.9f), plateMat, false);
+            BoxCollider trigger = playerPlate.AddComponent<BoxCollider>();
+            trigger.isTrigger = true;
+            trigger.center = new Vector3(0f, 0.5f, 0f);
+            trigger.size = new Vector3(0.9f, 1f, 0.9f);
+            Light playerLight = ctx.PointLight("Indicator", playerPlate.transform, new Vector3(0f, 0.6f, 0f), new Color(1f, 0.75f, 0.3f), 2.5f, 0.4f);
+            playerPlate.AddComponent<PressurePlate>().Configure(nearColumn.ToArray(), playerLight, 6f);
+
+            // Lumi plakası: tuzakların karşı tarafında, güney köşede.
+            var lumiPlate = new GameObject("LumiPlate");
+            lumiPlate.transform.SetParent(room, false);
+            lumiPlate.transform.localPosition = new Vector3(13.3f, 0f, 34.4f);
+            ctx.Box("Plate", lumiPlate.transform, new Vector3(0f, 0.02f, 0f), new Vector3(0.9f, 0.04f, 0.9f), plateMat, false);
+            Light lumiLight = ctx.PointLight("Indicator", lumiPlate.transform, new Vector3(0f, 0.6f, 0f), new Color(1f, 0.2f, 0.15f), 2.5f, 1.2f);
+            lumiPlate.AddComponent<CompanionPlate>().Configure(lumiPlate.transform, farColumn.ToArray(), lumiLight);
         }
 
         /// <summary>Sütunlar ve alçak duvarlar. Aralıklar oyuncu ve Lumi için en az 2 m.</summary>
