@@ -70,10 +70,16 @@ namespace Lumen.Tests
         {
             yield return LoadScene();
 
-            // Labirentin kapıları Lumi'nin şalterleriyle açılır; yol denetiminden önce açılır.
+            // Labirentin kapıları Lumi'nin şalterleriyle açılır; yol denetiminden önce açılır. Dikenler açıkken
+            // NavMesh'i oyar, bu yüzden kalıcı yolun ölçülmesi için hepsi indirilir.
             foreach (MazeGate gate in Object.FindObjectsByType<MazeGate>(FindObjectsSortMode.None))
             {
                 gate.Activate();
+            }
+
+            foreach (SpikeTrap trap in Object.FindObjectsByType<SpikeTrap>(FindObjectsSortMode.None))
+            {
+                trap.SetSuppressed(true);
             }
 
             yield return new WaitForSeconds(1.5f);
