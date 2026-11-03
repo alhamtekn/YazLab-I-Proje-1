@@ -114,8 +114,10 @@ namespace Lumen.Tests
             yield return WaitUntilOrTimeout(() => PlanarDistance(companion.transform.position, player.transform.position) < 3f, FollowTimeoutSeconds);
             Assert.Less(PlanarDistance(companion.transform.position, player.transform.position), 3f, "Lumi Arven'in bölgesine kadar oyuncuyu takip edemedi.");
 
-            // 6) Tapınağın kalbi: içine girince oyun biter.
-            player.Teleport(new Vector3(0f, 0.05f, 54f));
+            // 6) Tapınağın kalbi: içine girince oyun biter. Kalbin yeri sabit değil (kutsal bölümle birlikte taşınabilir),
+            //    bu yüzden TempleHeart tetiğinin bulunduğu yere, zemin hizasına ışınlanılır.
+            var heart = Object.FindAnyObjectByType<TempleHeart>();
+            player.Teleport(heart.transform.position + Vector3.down * 0.95f);
             yield return WaitUntilOrTimeout(() => gameState.IsGameOver, 2f);
             Assert.IsTrue(gameState.IsGameOver, "Tapınağın kalbine girince oyun bitmedi.");
         }
