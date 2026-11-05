@@ -52,7 +52,13 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             gameState.Configure(dialogue, null, playerRespawn, journal, crystals); // kapıyı NpcSection bağlar
 
             ChatView view = canvas.gameObject.AddComponent<ChatView>();
-            view.Configure(panel, history, thinking, input, trust, trustFill, gameState);
+            // Cevap sesi: kristal çanının kısık hali, yalnızca Arven konuşunca çalar
+            AudioSource replySound = canvas.gameObject.AddComponent<AudioSource>();
+            replySound.clip = MusicGenerator.ChimeSfx();
+            replySound.playOnAwake = false;
+            replySound.volume = 0.3f;
+            replySound.pitch = 0.8f; // biraz daha pes: taş bekçinin sesi
+            view.Configure(panel, history, thinking, input, trust, trustFill, gameState, replySound);
             dialogue.Configure(view, service);
 
             ctx.Set(view);
