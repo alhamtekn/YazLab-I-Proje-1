@@ -53,7 +53,6 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ChatView view = canvas.gameObject.AddComponent<ChatView>();
             view.Configure(panel, history, thinking, input, trust, gameState);
             dialogue.Configure(view, service);
-            chat.AddComponent<OllamaTest>().Configure(view); // Y: ayrıştırıcı testi
 
             ctx.Set(view);
             ctx.Set(dialogue);
