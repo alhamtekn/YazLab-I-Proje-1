@@ -37,6 +37,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             Text trust = HudSection.CreateText(ctx, panel.transform, "Trust", new Vector2(1f, 1f), new Vector2(-30f, -20f), new Vector2(500f, 60f), 22, TextAnchor.UpperRight);
             trust.color = new Color(1f, 0.85f, 0.5f);
+            RectTransform trustFill = CreateTrustBar(panel.transform);
 
             InputField input = CreateInput(ctx, panel.transform);
 
@@ -51,13 +52,35 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             gameState.Configure(dialogue, null, playerRespawn, journal, crystals); // kapıyı NpcSection bağlar
 
             ChatView view = canvas.gameObject.AddComponent<ChatView>();
-            view.Configure(panel, history, thinking, input, trust, gameState);
+            // Cevap sesi: kristal çanının kısık hali, yalnızca Arven konuşunca çalar
+            AudioSource replySound = canvas.gameObject.AddComponent<AudioSource>();
+            replySound.clip = MusicGenerator.ChimeSfx();
+            replySound.playOnAwake = false;
+            replySound.volume = 0.3f;
+            replySound.pitch = 0.8f; // biraz daha pes: taş bekçinin sesi
+            view.Configure(panel, history, thinking, input, trust, trustFill, gameState, replySound);
             dialogue.Configure(view, service);
-            chat.AddComponent<OllamaTest>().Configure(view); // Y: ayrıştırıcı testi
 
             ctx.Set(view);
             ctx.Set(dialogue);
             ctx.Set(gameState);
+        }
+
+        // Güven yazısının altında ince çubuk: koyu zemin + soldan dolan kısım (ChatView genişliğini ayarlar)
+        private static RectTransform CreateTrustBar(Transform parent)
+        {
+            var background = new GameObject("TrustBar", typeof(RectTransform), typeof(Image));
+            background.transform.SetParent(parent, false);
+            Place((RectTransform)background.transform, new Vector2(1f, 1f), new Vector2(-30f, -86f), new Vector2(300f, 10f));
+            background.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.15f);
+
+            var fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fill.transform.SetParent(background.transform, false);
+            var rect = (RectTransform)fill.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = new Vector2(0f, 1f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            return rect;
         }
 
         private static InputField CreateInput(SceneBuildContext ctx, Transform parent)

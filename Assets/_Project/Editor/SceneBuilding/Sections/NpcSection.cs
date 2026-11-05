@@ -50,11 +50,13 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Primitive(PrimitiveType.Cube, "Base", arven.transform, new Vector3(0f, 0.25f, 0f), new Vector3(1.4f, 0.5f, 1.2f), stone);
             ctx.Primitive(PrimitiveType.Cube, "Body", arven.transform, new Vector3(0f, 1.3f, 0f), new Vector3(1f, 1.6f, 0.7f), stone);
             ctx.Primitive(PrimitiveType.Sphere, "Head", arven.transform, new Vector3(0f, 2.35f, 0f), Vector3.one * 0.6f, stone);
-            ctx.Primitive(PrimitiveType.Sphere, "Eye_L", arven.transform, new Vector3(-0.12f, 2.4f, -0.27f), Vector3.one * 0.09f, eyes);
-            ctx.Primitive(PrimitiveType.Sphere, "Eye_R", arven.transform, new Vector3(0.12f, 2.4f, -0.27f), Vector3.one * 0.09f, eyes);
-            ctx.PointLight("EyeGlow", arven.transform, new Vector3(0f, 2.4f, -0.8f), new Color(0.5f, 0.8f, 1f), 3f, 0.8f);
+            GameObject eyeL = ctx.Primitive(PrimitiveType.Sphere, "Eye_L", arven.transform, new Vector3(-0.12f, 2.4f, -0.27f), Vector3.one * 0.09f, eyes);
+            GameObject eyeR = ctx.Primitive(PrimitiveType.Sphere, "Eye_R", arven.transform, new Vector3(0.12f, 2.4f, -0.27f), Vector3.one * 0.09f, eyes);
+            Light eyeGlow = ctx.PointLight("EyeGlow", arven.transform, new Vector3(0f, 2.4f, -0.8f), new Color(0.5f, 0.8f, 1f), 3f, 0.8f);
 
             arven.AddComponent<ArvenNpc>().Configure(chat, gameState);
+            // Gözler modelin ruh haline (mood) göre renk değiştirir
+            arven.AddComponent<ArvenMoodView>().Configure(ctx.Get<ArvenDialogue>(), new[] { eyeL.GetComponent<Renderer>(), eyeR.GetComponent<Renderer>() }, eyeGlow);
         }
 
         // z=52'deki duvar ve ortasındaki kapı (Onur'un kristal kapısıyla aynı yapı: kanat NavMesh'e dahil değil, engel keser)

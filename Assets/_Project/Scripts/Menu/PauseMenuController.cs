@@ -1,11 +1,12 @@
 using Lumen.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Lumen.Menu
 {
     /// <summary>
-    /// Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Ana Menü.
+    /// Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Tuşlar, Yeniden Başla, Ana Menü.
     /// Açıkken oyun zamanı durur ve oyuncu girdisi kilitlenir (imleç serbest kalır).
     /// </summary>
     public class PauseMenuController : MonoBehaviour
@@ -16,6 +17,7 @@ namespace Lumen.Menu
         [SerializeField] private Slider brightnessSlider;
         [SerializeField] private Toggle fullscreenToggle;
         [SerializeField] private Button mainMenuButton;
+        [SerializeField] private Button restartButton;
         [SerializeField] private Text statusText;
         [SerializeField] private KeyCode toggleKey = KeyCode.Escape;
 
@@ -27,8 +29,9 @@ namespace Lumen.Menu
 
         public bool IsOpen => panel != null && panel.activeSelf;
 
-        public void Configure(GameObject menuPanel, Button resume, Slider volume, Slider brightness, Toggle fullscreen, Button mainMenu, Text status)
+        public void Configure(GameObject menuPanel, Button resume, Slider volume, Slider brightness, Toggle fullscreen, Button mainMenu, Button restart, Text status)
         {
+            restartButton = restart;
             panel = menuPanel;
             resumeButton = resume;
             volumeSlider = volume;
@@ -86,6 +89,7 @@ namespace Lumen.Menu
             fullscreenToggle.onValueChanged.AddListener(OnFullscreenChanged);
             resumeButton.onClick.AddListener(Close);
             mainMenuButton.onClick.AddListener(OnMainMenu);
+            restartButton.onClick.AddListener(OnRestart);
 
             panel.SetActive(false);
         }
@@ -132,6 +136,15 @@ namespace Lumen.Menu
         {
             settings.fullscreen = value;
             applier.Apply(settings);
+        }
+
+        // Oyun sahnesini baştan yükler (sunumda baştan oynatmak için); ayarlar kaydedilir, zaman ve kilit sıfırlanır
+        private void OnRestart()
+        {
+            store.Save(settings);
+            Time.timeScale = 1f;
+            InputLock.Release(this);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         private void OnMainMenu()

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Lumen.EditorTools.SceneBuilding.Sections
 {
-    /// <summary>Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Tuşlar, Ana Menü.</summary>
+    /// <summary>Esc ile açılan duraklatma menüsü: Devam Et, Ses, Işık, Tam Ekran, Tuşlar, Yeniden Başla, Ana Menü.</summary>
     public sealed class PauseMenuSection : ISceneSection
     {
         private static readonly Color PanelColor = new Color(0.04f, 0.05f, 0.08f, 0.92f);
@@ -23,7 +23,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             GameObject panel = CreateImage("Panel", dim.transform, PanelColor);
             var panelRect = (RectTransform)panel.transform;
-            panelRect.sizeDelta = new Vector2(560f, 600f);
+            panelRect.sizeDelta = new Vector2(560f, 680f);
 
             Text title = HudSection.CreateText(ctx, panel.transform, "Title", new Vector2(0.5f, 1f), new Vector2(0f, -30f), new Vector2(500f, 60f), 40, TextAnchor.MiddleCenter);
             title.text = "Duraklatıldı";
@@ -34,13 +34,14 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Slider brightness = CreateLabeledSlider(ctx, resources, panel.transform, "Brightness", "Işık", -270f);
             Toggle fullscreen = CreateLabeledToggle(ctx, resources, panel.transform, "Fullscreen", "Tam Ekran", -340f);
             Button keys = CreateButton(ctx, resources, panel.transform, "Keys", "Tuşlar", -420f);
-            Button mainMenu = CreateButton(ctx, resources, panel.transform, "MainMenu", "Ana Menü", -500f);
+            Button restart = CreateButton(ctx, resources, panel.transform, "Restart", "Yeniden Başla", -500f);
+            Button mainMenu = CreateButton(ctx, resources, panel.transform, "MainMenu", "Ana Menü", -580f);
 
             Text status = HudSection.CreateText(ctx, panel.transform, "Status", new Vector2(0.5f, 0f), new Vector2(0f, 14f), new Vector2(500f, 30f), 20, TextAnchor.MiddleCenter);
             status.color = new Color(1f, 0.75f, 0.45f);
 
             PauseMenuController controller = canvas.gameObject.AddComponent<PauseMenuController>();
-            controller.Configure(dim, resume, volume, brightness, fullscreen, mainMenu, status);
+            controller.Configure(dim, resume, volume, brightness, fullscreen, mainMenu, restart, status);
             ctx.Set(controller);
 
             // Tuşlar paneli duraklatma panelinin üstünde açılır; menü kapanınca o da kapanır
