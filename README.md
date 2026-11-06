@@ -54,6 +54,8 @@ Birinci şahıs kameralı, yedi bölümlük bir macera. Oyuncu, ışığını yi
 | 5 | Kutsal bölüm | **İkiz Mühür:** iki mühür aynı anda yanmalı. **Işığın Yolu:** lavın üstünde yalnızca Lumi'nin ışığında görünen yol | Oyuncunun sığmadığı nişteki mührü şarj eder; fenere giderek yolu aydınlatır | Geliştirici 2 |
 | 6 | Tapınağın kalbi | Bitiş ekranı: süre, Arven'in güveni, Ana Menü | — | Geliştirici 2 |
 
+Lava düşmek, Lumi'nin parkuruna (tuzak odası) girmek ya da Arven'i fazla kızdırmak (güven −30 ya da 3. saldırı) oyunu kaybettirir: "Şansını kaybettin" ekranından **Yeniden Oyna** ile baştan başlanır.
+
 **Kontroller:** WASD hareket, fare etrafa bakma, **E** etkileşim, **F** Lumi'den yardım iste, **G** Lumi beni takip etsin, **Enter** Arven'e gönder, **Tab** sohbeti kapat, **Esc** menü. Oyunda ekranda yalnızca F ipucu görünür; tüm tuşlar menüdeki **Tuşlar** panelindedir.
 
 ## 3. Kurulum ve çalıştırma
@@ -330,7 +332,7 @@ Tüm testler Unity Test Framework PlayMode testleridir: gerçek sahne yüklenir,
 | `MiddleZoneTests` | Kristaller, kristal kapısı, yazıtlar, odalara NavMesh ile ulaşım | 4 |
 | `CrystalRoomTests` | Kristal odası parkurları Lumi ile geçilir | 4 |
 | `IntroTests` | Giriş koridoru ve Lumi ile tanışma | 2 |
-| `SanctumTests` | İkiz Mühür yalnızca oyuncu + Lumi ile açılır; Işığın Yolu; uçurumdan düşen döner; girişten geçiş | 6 |
+| `SanctumTests` | İkiz Mühür yalnızca oyuncu + Lumi ile açılır; Işığın Yolu; uçurumdan düşen kaybeder; girişten geçiş | 6 |
 | `EndToEndTests` | Şalterden tapınağın kalbine tüm akış; kandırılmış model bile bölümler bitmeden kapıyı açamaz | 2 |
 | `NPCResponseParserTests` | Ayrıştırıcı (boş, bozuk, sarılmış, aralık dışı JSON) ve girdi filtresi | 15 |
 | `OllamaOfflineTests` | Ollama kapalıyken oyun çökmez, yedek cevap, güven değişmez | 1 |
@@ -339,7 +341,8 @@ Tüm testler Unity Test Framework PlayMode testleridir: gerçek sahne yüklenir,
 | `ArvenMoodTests`, `TrustBarTests`, `TypewriterTests` | Göz rengi, güven çubuğu, harf harf cevap ve bildirim sırası | 4 |
 | `InteractionTests`, `MinimapTests`, `CrosshairAndRestartTests` | Duvar arkası etkileşim, mini harita/tavan, nişangah, yeniden başlatma | 6 |
 | `StoryTests`, `MusicTests`, `EndScreenTests` | Hikâye metinleri, müzik geçişi/efektler, bitiş ekranı | 5 |
-| **Toplam** | | **53 / 53 geçti** |
+| `GameOverTests` | Köprü kenarından lava düşen kaybeder; tuzak odası oyuncuya kaybettirir, Lumi'ye değil; Arven'in 3. saldırısı; Yeniden Oyna | 4 |
+| **Toplam** | | **57 / 57 geçti** |
 
 Ayrıntılı sonuç tablosu: [`TestResults/playmode_results.md`](TestResults/playmode_results.md).
 
@@ -405,6 +408,7 @@ Görüntüler **Lumen → Ekran Görüntüleri Al** aracıyla sahneden sabit aç
 - [x] Giriş koridoru ve Lumi ile tanışma; köprü dokusu, lav, tavan
 - [x] Tapınak dokuları (`TempleTextures`, triplanar shader)
 - [x] Eşlikçi testleri (30/30), uçtan uca test, ekran görüntüsü aracı
+- [x] Kaybetme durumları: "Şansını kaybettin" ekranı, lav, Lumi'ye özel tuzak odası, Arven'in öfkesi
 
 ### Geliştirici 2 — Ali Hamza TEKİNBAŞ: Ollama NPC, arayüz, oyun durumu
 
