@@ -205,6 +205,12 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             field.Configure(traps.ToArray(), resetPoint);
             ctx.Set(field);
 
+            // Bu oda yalnızca Lumi'nin parkuru: oyuncu bir şekilde girerse kaybeder. Tetik yalnızca Player katmanına
+            // tepki verir (KillZone), Lumi'yi etkilemez. Parmaklıkların (x = -8) iç tarafından başlar.
+            GameObject forbidden = ctx.Box("LumiOnlyZone", room, new Vector3(-13.1f, 1f, 8f), new Vector3(9.8f, 2f, 16f), null, true, 2);
+            forbidden.GetComponent<Collider>().isTrigger = true;
+            forbidden.AddComponent<KillZone>().SetLoseReason("Bu yol yalnızca Lumi'ye ait.");
+
             ctx.Torch("Torch_TrapRoom_A", room, new Vector3(-17.8f, 2.4f, 3f));
             ctx.Torch("Torch_TrapRoom_B", room, new Vector3(-17.8f, 2.4f, 13f));
         }
