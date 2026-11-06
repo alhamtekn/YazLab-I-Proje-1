@@ -27,7 +27,7 @@ namespace Lumen.EditorTools.SceneBuilding
         private const string CorePath = TextureFolder + "/OrbCore.png";
         private const string RingPath = TextureFolder + "/OrbRing.png";
         private const string BackgroundPath = TextureFolder + "/MenuBackground.png";
-        private const string FontPath = "Assets/_Project/Fonts/Cinzel.ttf";
+        internal const string FontPath = "Assets/_Project/Fonts/Cinzel.ttf";
 
         private static readonly Color Gold = new Color(0.86f, 0.74f, 0.48f);
 
@@ -115,7 +115,7 @@ namespace Lumen.EditorTools.SceneBuilding
         }
 
         // Arka planı olmayan yazı düğmesi; üzerine gelince yazı kayar ve solunda altın çizgi belirir
-        private static Button TextButton(SceneBuildContext ctx, Transform parent, Font font, string name, string label, float y)
+        internal static Button TextButton(SceneBuildContext ctx, Transform parent, Font font, string name, string label, float y)
         {
             var go = new GameObject(name, typeof(RectTransform), typeof(Image));
             go.transform.SetParent(parent, false);

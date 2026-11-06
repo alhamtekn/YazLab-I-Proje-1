@@ -11,7 +11,7 @@ namespace Lumen.NPC
     //  - tek mesajda güven en fazla maxTrustGain kadar artar,
     //  - bölümler (3 kristal + 3 yazıt) bitmeden güven eşiğe ulaşamaz,
     //  - model open_door dese bile güven eşiğin altındaysa kapı açılmaz; güven eşiğe ulaşınca kapı kendiliğinden açılır.
-    public sealed class GameStateManager : MonoBehaviour
+    public sealed class GameStateManager : MonoBehaviour, IGameOver
     {
         [SerializeField] private ArvenDialogue dialogue;
         [SerializeField] private MonoBehaviour door;    // IActivatable: Arven'in kapısı
@@ -30,6 +30,7 @@ namespace Lumen.NPC
         public int Trust { get; private set; }
         public int TrustThreshold => trustThreshold;
         public bool IsGameOver { get; private set; }
+        public bool IsLost { get; private set; }
 
         // İlerleme: eksik bölüm yoksa (sahnede kurulmamışsa) tamam sayılır
         public int LoreRead => loreJournal != null ? loreJournal.Entries.Count : requiredLore;
@@ -41,6 +42,7 @@ namespace Lumen.NPC
         public event Action<string> Notice;     // oyuncuya kısa bilgi: kapı açıldı / açılmadı / saldırı
         public event Action PlayerAttacked;     // oyuncu geri atıldı (panel kapanır)
         public event Action GameEnded;
+        public event Action<string> GameLost;   // oyuncu kaybetti (sebep): "Şansını kaybettin" ekranı açılır
 
         public void Configure(ArvenDialogue arvenDialogue, MonoBehaviour arvenDoor, MonoBehaviour playerRespawnable,
             MonoBehaviour loreJournalSource, CrystalCounter crystalCounter)
@@ -57,13 +59,26 @@ namespace Lumen.NPC
 
         public void EndGame()
         {
-            if (IsGameOver)
+            if (IsGameOver || IsLost)
             {
                 return;
             }
 
             IsGameOver = true;
             GameEnded?.Invoke();
+        }
+
+        // Lav, Lumi'nin parkuru ya da Arven: oyun bittiyse veya zaten kaybedildiyse bir şey yapmaz
+        public void Lose(string reason)
+        {
+            if (IsGameOver || IsLost)
+            {
+                return;
+            }
+
+            IsLost = true;
+            Debug.Log("[Oyun] Kaybedildi: " + reason);
+            GameLost?.Invoke(reason);
         }
 
         private void Awake()
@@ -83,7 +98,7 @@ namespace Lumen.NPC
         // Arven'in her (ayrıştırılmış) cevabında çalışır
         private void OnResponded(NPCResponse response)
         {
-            if (IsGameOver)
+            if (IsGameOver || IsLost)
             {
                 return;
             }
