@@ -282,3 +282,38 @@ Gerçek bir cevap (`TestResults/dialogue_results.md`):
 | **`gemma3:4b`** | Akıcı, rolüne uygun | **2–3 sn** (ilk istek model yüklenirken ~10 sn) | **Seçildi** |
 
 `temperature 0.6`: tutarlılık ile çeşitlilik arasında denge için seçildi. Zaman aşımı 30 sn: model normalde 2–3 sn'de cevap verir; takılırsa oyuncu fazla beklemez.
+
+## 7. Hata yönetimi stratejisi
+
+| Durum | Nerede yakalanır | Oyuncunun gördüğü | Oyun durumu |
+| --- | --- | --- | --- |
+| Ollama kapalı / bağlantı reddedildi | `OllamaService`: `request.result != Success` → `null` | "Arven derin bir sessizliğe gömüldü..." | Güven değişmez, soru geçmişten silinir, tekrar denenebilir |
+| Zaman aşımı (30 sn) | `UnityWebRequest.timeout` | Aynı | Aynı |
+| Sunucu beklenmedik gövde döndürdü | `OllamaService`: `JObject.Parse` hatası yakalanır → `null` | Aynı | Aynı |
+| Model JSON dışı metin / bozuk JSON | `NPCResponseParser` adım 2–3 | "Arven bir şeyler mırıldandı ama anlaşılmadı." | Güven değişmez |
+| Eksik/geçersiz alan, aralık dışı sayı | `NPCResponseParser` adım 4 | Cevap gösterilir, değerler güvenli varsayılana çekilir | Güven en fazla ±20 (ve oyun kuralları) |
+| İstek sürerken sahne kapandı | `ArvenDialogue`: `await` sonrası `this == null` kontrolü | — | İşlem sessizce bırakılır |
+| Cevap beklenirken oyun | `async/await` (`Awaitable`) | "Arven düşünüyor..." animasyonu, giriş kilitli | Oyun donmaz; Tab ile sohbet kapatılabilir |
+
+Hiçbir hata durumunda istisna oyun döngüsüne sızmaz. Sabit metin yalnızca bu hata yedeklerinde ve prompt injection reddinde kullanılır; normal her cevap modelden canlı gelir.
+
+## 8. Prompt injection savunması
+
+Oyuncu serbest metin yazabildiği için modeli kandırıp kapıyı açtırmaya çalışabilir. Savunma dört katmanlıdır; model kandırılsa bile kapı erken açılmaz.
+
+```mermaid
+flowchart TD
+    M[Oyuncunun mesajı] --> G{1. PromptGuard<br/>"sistem:", "trustDelta", "open_door",<br/>"kuralları unut", "ignore"...}
+    G -->|şüpheli| R[Modele gitmez<br/>Arven reddeder, güven −10]
+    G -->|temiz| L[Ollama]
+    L --> P[NPCResponseParser]
+    P --> C{2. Artış sınırı<br/>Δ en fazla +10}
+    C --> T{3. İlerleme tavanı<br/>kristaller + 3 yazıt bitmeden güven ≤ 29}
+    T --> D{4. Kapıyı oyun kuralı açar<br/>güven ≥ 30 şart; modelin open_door demesi yetmez}
+    D -->|güven ≥ 30| O[Kapı açılır]
+    D -->|değilse| N["Arven kapıya uzandı ama durdu"]
+```
+
+`PromptGuard` metni hem Türkçe hem değişmez kültürle küçük harfe çevirerek arar (Türkçede "Ignore" → "ıgnore" olduğu için tek çeviri kaçırıyordu; bu hata bir testle bulundu). "Yapay zeka mısın?" gibi masum sorular cezalandırılmasın diye desen listesi dar tutuldu.
+
+Canlı testte (Bölüm 9.3) model art arda üç kez `+20` ve `open_door` döndürdü; oyun kuralları güveni 10 → 20 → 30 diye artırdı ve kapı ancak 30'da açıldı.
