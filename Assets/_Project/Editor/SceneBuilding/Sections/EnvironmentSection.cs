@@ -265,11 +265,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
             ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
 
-            ctx.InvisibleWall("EdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
-            ctx.InvisibleWall("EdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
+            // Uçurumun kenarları açık: köprünün yanından düşen lava düşer. Ortadaki görünmez duvar köprü kalkıkken
+            // boşluğu kapatır, köprü inince Drawbridge kaldırır.
             GameObject centerBarrier = ctx.InvisibleWall("EdgeBarrier_Bridge", chasm, new Vector3(0f, 1.5f, 15.85f), new Vector3(3f, 3f, 0.3f));
-            ctx.InvisibleWall("FarEdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 24.15f), new Vector3(6.5f, 3f, 0.3f));
-            ctx.InvisibleWall("FarEdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 24.15f), new Vector3(6.5f, 3f, 0.3f));
 
             var navBlocker = new GameObject("BridgeNavBlocker");
             navBlocker.transform.SetParent(chasm, false);
