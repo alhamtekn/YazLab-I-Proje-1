@@ -47,6 +47,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
                 if (!string.IsNullOrEmpty(zone.LoseReason))
                 {
                     zone.SetGameOver(gameState);
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(zone); // ilk uçurumun lavı ortam prefab'ının içinde
                 }
             }
         }
