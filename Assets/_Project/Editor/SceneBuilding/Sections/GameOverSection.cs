@@ -40,6 +40,15 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Button mainMenu = CenteredButton(ctx, panel.transform, font, "MainMenu", "Ana Menü", -170f, 30, Color.white);
 
             canvas.gameObject.AddComponent<GameOverScreen>().Configure(gameState, panel.GetComponent<CanvasGroup>(), reason, retry, mainMenu);
+
+            // Kaybetme sebebi verilmiş bütün bölgeler (lav, Lumi'nin parkuru) oyun durumuna bağlanır
+            foreach (KillZone zone in Object.FindObjectsByType<KillZone>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (!string.IsNullOrEmpty(zone.LoseReason))
+                {
+                    zone.SetGameOver(gameState);
+                }
+            }
         }
 
         // Ana menünün yazı düğmesi, ekranın ortasına taşınmış ve renklendirilmiş hâli

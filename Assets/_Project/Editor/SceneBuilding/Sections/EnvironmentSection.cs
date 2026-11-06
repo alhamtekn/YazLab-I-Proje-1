@@ -75,7 +75,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
-            killZone.AddComponent<KillZone>();
+            killZone.AddComponent<KillZone>().SetLoseReason("Lava düştün."); // oyun durumunu GameOverSection bağlar
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
@@ -100,7 +100,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         /// <summary>
         /// Uçurumun dibi: parlayan lav yüzeyi, alttan duvarları aydınlatan turuncu ışıklar ve çukurun ön/arka
         /// yan duvarları (zeminlerin altı boş görünmesin). Lav collider'sız ve Ignore Raycast katmanında,
-        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone ile kontrol noktasına döner.
+        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone'a girince oyunu kaybeder.
         /// "Lava" malzemesi kutsal bölümdeki uçurumda da kullanılır.
         /// </summary>
         private static void BuildLavaPit(SceneBuildContext ctx, Transform shell)
