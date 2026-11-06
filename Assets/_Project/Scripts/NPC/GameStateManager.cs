@@ -22,6 +22,8 @@ namespace Lumen.NPC
         [SerializeField] private int maxTrustGain = 10;  // model +20 dese bile tek mesajda en fazla bu kadar artar
         [SerializeField] private int requiredLore = 3;   // okunması gereken yazıt sayısı
         [SerializeField] private float attackDelay = 2f; // oyuncu Arven'in sözünü okuyabilsin diye bekleme
+        [SerializeField] private int loseTrust = -30;    // güven bu değere ya da altına düşerse kaybedilir
+        [SerializeField] private int maxAttacks = 3;     // bu kaçıncı saldırıda kaybedilir (öncekilerde geri atılır)
 
         private IActivatable doorActivatable;
         private IRespawnable playerRespawn;
@@ -31,6 +33,7 @@ namespace Lumen.NPC
         public int TrustThreshold => trustThreshold;
         public bool IsGameOver { get; private set; }
         public bool IsLost { get; private set; }
+        public int Attacks { get; private set; }
 
         // İlerleme: eksik bölüm yoksa (sahnede kurulmamışsa) tamam sayılır
         public int LoreRead => loreJournal != null ? loreJournal.Entries.Count : requiredLore;
@@ -113,6 +116,12 @@ namespace Lumen.NPC
                 Notice?.Invoke("Arven sana tam güvenmiyor: önce kristalleri topla ve tapınağın yazıtlarını oku.");
             }
 
+            if (Trust <= loseTrust)
+            {
+                Lose("Arven'i fazla kızdırdın.");
+                return;
+            }
+
             Debug.Log($"[Arven] güven {Trust}/{trustThreshold} (model: {response.trustDelta}), eylem {response.action}, " +
                       $"yazıt {LoreRead}/{requiredLore}, kristal {(CrystalsComplete ? "tamam" : "eksik")} | {response.reason}");
 
@@ -123,6 +132,14 @@ namespace Lumen.NPC
             }
             else if (response.action == "attack")
             {
+                Attacks++;
+                if (Attacks >= maxAttacks)
+                {
+                    Lose("Arven'i fazla kızdırdın.");
+                    return;
+                }
+
+                Notice?.Invoke($"Arven'in sabrı tükeniyor ({Attacks}/{maxAttacks}).");
                 StartCoroutine(Attack());
             }
         }
@@ -148,6 +165,11 @@ namespace Lumen.NPC
         {
             Notice?.Invoke("Arven öfkeyle yumruğunu kaldırdı!");
             yield return new WaitForSeconds(attackDelay);
+            if (IsLost)
+            {
+                yield break;
+            }
+
             playerRespawn?.Respawn();
             PlayerAttacked?.Invoke();
         }
