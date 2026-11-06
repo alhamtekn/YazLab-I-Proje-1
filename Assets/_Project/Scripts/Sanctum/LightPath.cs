@@ -7,7 +7,7 @@ namespace Lumen.Sanctum
     /// <summary>
     /// 2. sınav "Işığın Yolu": uçurumun üstünde görünmez, dolambaçlı bir yol. Taşlar yalnızca Lumi'nin ışığı
     /// yakınlarına düşünce görünür ve bir süre sonra yeniden kaybolur. Oyuncu yolu göremez; Lumi'yi karşıdaki
-    /// fenere gönderir (F) ve onun aydınlattığı taşlardan geçer. Düşen oyuncu kontrol noktasına döner.
+    /// fenere gönderir (F) ve onun aydınlattığı taşlardan geçer. Lava düşen oyuncu oyunu kaybeder.
     /// Taşların çarpıştırıcısı hep açıktır; Lumi yolu NavMesh ile kendisi bulur.
     /// </summary>
     public class LightPath : MonoBehaviour, ICompanionTarget

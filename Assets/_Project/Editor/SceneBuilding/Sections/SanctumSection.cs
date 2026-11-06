@@ -85,10 +85,10 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             BuildCeiling(ctx, zone);
 
-            // Uçuruma düşen kontrol noktasına döner
+            // Uçuruma (lava) düşen oyunu kaybeder; oyun durumunu GameOverSection bağlar
             GameObject killZone = ctx.Box("KillZone", zone, new Vector3(0f, -4f, (ChasmStartZ + ChasmEndZ) * 0.5f), new Vector3(16f, 1f, ChasmEndZ - ChasmStartZ), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
-            killZone.AddComponent<KillZone>();
+            killZone.AddComponent<KillZone>().SetLoseReason("Lava düştün.");
         }
 
         // Uçurumun dibi: parlayan lav ve aşağıdan duvarları aydınlatan turuncu ışıklar (uçurum boş görünmesin).
@@ -163,11 +163,6 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             Light beaconLight = ctx.PointLight("BeaconLight", beacon, new Vector3(0.9f, 1.6f, 0.6f), new Color(0.6f, 0.85f, 1f), 10f, 0.4f);
 
             root.gameObject.AddComponent<LightPath>().Configure(ctx.Get<CompanionController>().transform, twinSeal, tiles, beacon, beaconLight);
-
-            // Uçurumun başında kontrol noktası: düşen oyuncu buraya döner
-            GameObject checkpoint = ctx.Box("Checkpoint", root, new Vector3(0f, 0.05f, ChasmStartZ - 1.5f), new Vector3(16f, 2f, 1f), null, true, 2);
-            checkpoint.GetComponent<Collider>().isTrigger = true;
-            checkpoint.AddComponent<Checkpoint>();
 
             Hint(ctx, zone, hud, ChasmStartZ - 2.5f, "Işığın Yolu: Taşlar yalnızca Lumi'nin ışığında görünür.\nLumi'yi karşıdaki fenere gönder (F) ve aydınlattığı taşlardan yürü.");
         }
