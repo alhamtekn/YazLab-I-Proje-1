@@ -123,16 +123,15 @@ namespace Lumen.Tests
         }
 
         [UnityTest]
-        public IEnumerator FallingIntoChasm_ReturnsPlayerToCheckpoint()
+        public IEnumerator FallingIntoChasm_LosesTheGame()
         {
             yield return Setup();
             yield return OpenSeal();
-            player.Teleport(new Vector3(0f, 0.05f, 72.5f)); // kontrol noktasından geç
-            yield return new WaitForSeconds(0.2f);
+            var gameState = Object.FindAnyObjectByType<Lumen.NPC.GameStateManager>();
 
             player.Teleport(new Vector3(-6f, 0.05f, 80f)); // yolun olmadığı yer
-            yield return WaitUntilOrTimeout(() => player.transform.position.z < ChasmStartZ && player.transform.position.y > -1f, 5f);
-            Assert.Less(player.transform.position.z, ChasmStartZ, "Düşen oyuncu kontrol noktasına dönmedi.");
+            yield return WaitUntilOrTimeout(() => gameState.IsLost, 5f);
+            Assert.IsTrue(gameState.IsLost, "Işığın Yolu'ndan lava düşen oyuncu kaybetmeli.");
         }
 
         private IEnumerator Setup()

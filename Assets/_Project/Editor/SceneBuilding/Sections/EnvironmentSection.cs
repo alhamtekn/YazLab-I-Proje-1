@@ -75,7 +75,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
 
             GameObject killZone = ctx.Box("KillZone", shell, new Vector3(0f, -4f, 20f), new Vector3(40f, 1f, 12f), null, true, 2);
             killZone.GetComponent<Collider>().isTrigger = true;
-            killZone.AddComponent<KillZone>();
+            killZone.AddComponent<KillZone>().SetLoseReason("Lava düştün."); // oyun durumunu GameOverSection bağlar
 
             // Zemin, dış duvarlar ve düşme bölgesi tek parça: diğer sahnelerde de aynı kabuk kullanılabilir.
             ctx.SavePrefab(shell.gameObject, "Environment_Prefab");
@@ -100,7 +100,7 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
         /// <summary>
         /// Uçurumun dibi: parlayan lav yüzeyi, alttan duvarları aydınlatan turuncu ışıklar ve çukurun ön/arka
         /// yan duvarları (zeminlerin altı boş görünmesin). Lav collider'sız ve Ignore Raycast katmanında,
-        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone ile kontrol noktasına döner.
+        /// NavMesh'e girmez; düşen oyuncu yukarıdaki KillZone'a girince oyunu kaybeder.
         /// "Lava" malzemesi kutsal bölümdeki uçurumda da kullanılır.
         /// </summary>
         private static void BuildLavaPit(SceneBuildContext ctx, Transform shell)
@@ -205,6 +205,12 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             field.Configure(traps.ToArray(), resetPoint);
             ctx.Set(field);
 
+            // Bu oda yalnızca Lumi'nin parkuru: oyuncu bir şekilde girerse kaybeder. Tetik yalnızca Player katmanına
+            // tepki verir (KillZone), Lumi'yi etkilemez. Parmaklıkların (x = -8) iç tarafından başlar.
+            GameObject forbidden = ctx.Box("LumiOnlyZone", room, new Vector3(-13.1f, 1f, 8f), new Vector3(9.8f, 2f, 16f), null, true, 2);
+            forbidden.GetComponent<Collider>().isTrigger = true;
+            forbidden.AddComponent<KillZone>().SetLoseReason("Bu yol yalnızca Lumi'ye ait.");
+
             ctx.Torch("Torch_TrapRoom_A", room, new Vector3(-17.8f, 2.4f, 3f));
             ctx.Torch("Torch_TrapRoom_B", room, new Vector3(-17.8f, 2.4f, 13f));
         }
@@ -265,11 +271,9 @@ namespace Lumen.EditorTools.SceneBuilding.Sections
             ctx.Box("Rail_L", pivot, new Vector3(-1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
             ctx.Box("Rail_R", pivot, new Vector3(1.45f, 0.5f, -4f), new Vector3(0.1f, 1f, 8f), bridgeWood);
 
-            ctx.InvisibleWall("EdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
-            ctx.InvisibleWall("EdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 15.85f), new Vector3(6.5f, 3f, 0.3f));
+            // Uçurumun kenarları açık: köprünün yanından düşen lava düşer. Ortadaki görünmez duvar köprü kalkıkken
+            // boşluğu kapatır, köprü inince Drawbridge kaldırır.
             GameObject centerBarrier = ctx.InvisibleWall("EdgeBarrier_Bridge", chasm, new Vector3(0f, 1.5f, 15.85f), new Vector3(3f, 3f, 0.3f));
-            ctx.InvisibleWall("FarEdgeBarrier_L", chasm, new Vector3(-4.75f, 1.5f, 24.15f), new Vector3(6.5f, 3f, 0.3f));
-            ctx.InvisibleWall("FarEdgeBarrier_R", chasm, new Vector3(4.75f, 1.5f, 24.15f), new Vector3(6.5f, 3f, 0.3f));
 
             var navBlocker = new GameObject("BridgeNavBlocker");
             navBlocker.transform.SetParent(chasm, false);
