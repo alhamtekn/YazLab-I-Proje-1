@@ -393,3 +393,43 @@ Görüntüler **Lumen → Ekran Görüntüleri Al** aracıyla sahneden sabit aç
 | ![Labirent](Docs/screenshots/05_labirent_kapi_ve_nis.png) Labirent kapısı ve Lumi'nin nişi | ![Diken odası](Docs/screenshots/06_diken_odasi_plakalar.png) Diken odası plakaları |
 | ![Galeri](Docs/screenshots/07_galeri_ve_kristal_kapisi.png) Galeri ve kristal kapısı | ![Arven](Docs/screenshots/08_arven.png) Bekçi Arven |
 | ![Kutsal bölüm](Docs/screenshots/09_kutsal_bolum.png) Kutsal bölüm | |
+
+## 11. Görev dağılımı ve Git iş akışı
+
+### Geliştirici 1 — Onur TOPBAŞ: eşlikçi ve seviye
+
+- [x] Lumi: `CompanionController`, State deseniyle 5 durumlu FSM, `RaycastSensor`, `NavMeshTargetSelector`
+- [x] 1. bölüm: tuzak odası, alçak geçit, `SwitchMechanism`, `Drawbridge`, `SpikeTrap`
+- [x] Kristal galerisi: `CrystalPickup`, `CrystalGate`, `LoreInscription`, `LoreJournal`, meşaleler
+- [x] Kristal odası parkurları (karanlık oda, şalterli labirent, iki plakalı diken odası)
+- [x] Giriş koridoru ve Lumi ile tanışma; köprü dokusu, lav, tavan
+- [x] Tapınak dokuları (`TempleTextures`, triplanar shader)
+- [x] Eşlikçi testleri (30/30), uçtan uca test, ekran görüntüsü aracı
+
+### Geliştirici 2 — Ali Hamza TEKİNBAŞ: Ollama NPC, arayüz, oyun durumu
+
+- [x] `ILLMService` + `OllamaService` (async, JSON şeması, zaman aşımı), `NPCResponse`, `NPCResponseParser`
+- [x] `PromptGuard` ve dört katmanlı prompt injection savunması, `GameStateManager`
+- [x] Sohbet arayüzü ("düşünüyor" göstergesi, güven çubuğu, harf harf cevap), Arven, Arven'in kapısı, göz rengi, bitiş ekranı
+- [x] Ana menü, birinci şahıs kamera, duraklatma menüsü, tuşlar paneli, mini harita, nişangah
+- [x] Kutsal bölüm (İkiz Mühür, Işığın Yolu), hikâye metinleri, müzik ve ses efektleri
+- [x] NPC testleri: ayrıştırıcı, Ollama kapalı, asenkron, canlı diyalog; Windows build betiği
+
+### İş akışı
+
+Tek depo; her iş kendi `feature/...` dalında yapıldı ve **Pull Request** ile `main`'e alındı (17 PR). Birleştirmeden önce PR'lar birlikte gözden geçirildi ve tüm testler birleşik halde çalıştırıldı. Sahne kodla üretildiği için `.unity` dosyası çakışmaları elle çözülmedi: ikinci birleşen dal `main`'i alıp sahneyi yeniden üretti. Dal ve sorumluluk planı: [`GOREVLER.md`](GOREVLER.md).
+
+## 12. Sonuç, tartışma ve sınırlılıklar
+
+**Sonuç.** İki yapay zekâ bileşeni tek oyunda, birbirine doğrudan bağımlı olmadan çalışıyor. Lumi 30 farklı başlangıç ve tuzak düzeninin tamamında hedefe ulaştı ve hiç tuzağa yakalanmadı. Arven'in tüm canlı cevapları şemaya uygun geldi. Ollama kapalıyken, bozuk cevapta ve kandırma denemelerinde oyun kontrollü davrandı.
+
+**Tartışma.**
+- *Model güveni tek başına karar vermemeli.* Canlı testte model kapıyı erkenden açmak istedi. Kapının oyun kuralıyla açılması ve artış sınırı, LLM'in tutarsızlığını oyun tasarımında güvenli hale getirdi.
+- *Yapılandırılmış çıktı şart.* Şema zorlaması olmadan model zaman zaman düz metin döndürüyordu; şemayla birlikte ayrıştırma hatası görülmedi.
+- *Sahneyi kodla üretmek* iki kişilik ekipte birleştirme sorunlarını ortadan kaldırdı ve her değişikliğin testle doğrulanmasını kolaylaştırdı.
+
+**Sınırlılıklar.**
+- LLM cevapları her çalıştırmada biraz farklıdır; diyalog testleri tek oturumluk örnektir, istatistiksel değildir. Model alakasız sözlere de küçük güven artışı verebiliyor.
+- Lumi testleri sahne geometrisi sabitken başlangıç noktasını ve tuzak zamanlamasını değiştirir; farklı oda düzenleri denenmedi.
+- `PromptGuard` anahtar kelime tabanlıdır; yaratıcı bir ifade filtreyi aşabilir. Bu yüzden asıl güvence sonraki üç katmandadır.
+- Oyun yalnızca Windows ve macOS'ta denendi; ilk Ollama isteği model yüklenirken ~10 sn sürebilir.
