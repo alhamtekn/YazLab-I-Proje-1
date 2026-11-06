@@ -13,9 +13,11 @@ Teslim: **6 Kasım Cuma 17:00**. Bu dosya güncel görev listesidir; bir görev 
 - Commit e-postası GitHub hesabında doğrulanmış olmalı (`git config user.email`).
 - Pazartesi ve Perşembe `git pull origin main`.
 
-## Mevcut durum (27 Ekim)
+## Mevcut durum (6 Kasım, teslim günü)
 
-1. bölüm tamam ve testli: oyuncu, NavMesh + FSM eşlikçi Lumi, `RaycastSensor`, tuzak odası, şalter ve köprü. PlayMode testleri 30/30 başarılı. Ayrıntı README'de.
+Oyun baştan sona tamam: ana menü, hikâye koridoru ve Lumi ile tanışma, 1. bölüm, Lumi ile geçilen kristal odaları, Ollama destekli Arven, kutsal bölüm (İkiz Mühür, Işığın Yolu), bitiş ekranı. 53 PlayMode testinin 53'ü geçiyor; gerçek Ollama ile diyalog testi `TestResults/dialogue_results.md`'de. Rapor README'de. 17 PR `main`'e alındı.
+
+Teslimden önce kalan: son `main` ile **Lumen → Windows Build Al**, `Builds/Lumen/Lumen.exe`'nin Ollama açıkken ve kapalıyken denenmesi.
 
 ## Onur — eşlikçi ve seviye
 
@@ -52,3 +54,9 @@ Teslim: **6 Kasım Cuma 17:00**. Bu dosya güncel görev listesidir; bir görev 
 ## Değişiklik kaydı
 
 - **27 Eki:** NavMesh + FSM kesinleşti, ML-Agents yok. 1. bölüm (Lumi, şalter, köprü, tuzaklar, testler) hazır olduğu için Onur'un 28-31 Ekim görevleri ara bölgeye kaydırıldı. Eski plandaki "`81a18bb`'den Core'u geri getir" adımı artık gereksiz; Core `main`'de.
+- **28 Eki – 1 Kas:** Ara bölge (kristaller, yazıtlar, kristal kapısı), Ollama NPC Arven, sohbet arayüzü ve oyun durumu tamamlandı (PR #1–#5).
+- **1–2 Kas:** Prompt injection savunması (filtre, +10 sınırı, bölümler bitmeden 29 tavanı, kapıyı oyun kuralı açar); kristal odaları; ayrıştırıcı testleri (PR #6, #7).
+- **2–3 Kas:** Ana menü, birinci şahıs kamera, gerilim müziği, kutsal bölüm; tapınak dokuları; uçtan uca test (PR #8–#10).
+- **3–4 Kas:** Giriş koridoru ve Lumi ile tanışma, köprü dokusu, lav, tavan, Lumi ile geçilen kristal odası parkurları; mini harita, tuşlar paneli, duvar arkası etkileşim, .exe build (PR #11–#14).
+- **4–5 Kas:** Hikâye metinleri, ses efektleri, kutsal bölüm müziği, bitiş ekranı; test sonuçları ve ekran görüntüleri; Arven'in göz rengi, güven çubuğu, harf harf cevap, nişangah, yeniden başlatma (PR #15–#17).
+- **6 Kas:** Gerçek Ollama ile diyalog testi, README raporu son haline getirildi, son build.
